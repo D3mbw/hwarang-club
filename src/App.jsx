@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
+import AboutSection from './components/AboutSection';
 import TrainingPlanList from './components/TrainingPlanList';
 import PhotoGallery from './components/PhotoGallery';
 import PlanEditor from './components/PlanEditor';
@@ -21,7 +22,7 @@ function App() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const sections = ['hero', 'plans', 'gallery'];
+          const sections = ['hero', 'about', 'plans', 'gallery'];
           for (const id of sections) {
             const el = document.getElementById(id);
             if (el) {
@@ -81,6 +82,7 @@ function App() {
     <div>
       <Header activeSection={activeSection} onNavigate={handleNavigate} />
       <HeroSection onNavigate={handleNavigate} />
+      <AboutSection />
       <TrainingPlanList
         plans={plans}
         onEdit={handleEditPlan}

@@ -54,6 +54,7 @@ const navLinkStyle = {
 export default function Header({ activeSection, onNavigate }) {
   const sections = [
     { id: 'hero', label: 'Главная' },
+    { id: 'about', label: 'О клубе' },
     { id: 'plans', label: 'Планы' },
     { id: 'gallery', label: 'Галерея' },
   ];
