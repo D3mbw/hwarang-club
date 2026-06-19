@@ -1,0 +1,81 @@
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: #16213e;
+  --accent: #0066ff;
+  --accent-dark: #0044cc;
+  --accent-light: #3388ff;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --border: #2d2d44;
+  --danger: #ff4444;
+  --success: #00cc66;
+  --gradient-blue: linear-gradient(135deg, #0066ff 0%, #0044cc 50%, #002266 100%);
+  --gradient-dark: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  --shadow: 0 4px 20px rgba(0, 102, 255, 0.15);
+  --shadow-hover: 0 8px 40px rgba(0, 102, 255, 0.3);
+  --radius: 12px;
+  --radius-lg: 20px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--accent-light);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+input, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
