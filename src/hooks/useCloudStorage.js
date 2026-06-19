@@ -3,8 +3,21 @@ import { useState, useEffect, useRef } from 'react';
 const API_URL = 'https://api.jsonbin.io/v3';
 const MASTER_KEY = '$2a$10$4oKJfMKMnGBkFMqhQgyq/.XKwkLFqDkAiJMPFAkBO7kJB1c5RGPiy';
 
+function normalizeData(data) {
+  if (!data) return {};
+  if (Array.isArray(data)) {
+    const obj = {};
+    data.forEach((item) => {
+      if (item && item.id) obj[item.id] = item;
+    });
+    return obj;
+  }
+  if (typeof data === 'object') return data;
+  return {};
+}
+
 export function useCloudStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(initialValue);
+  const [storedValue, setStoredValue] = useState(normalizeData(initialValue));
   const [loading, setLoading] = useState(true);
   const binIdRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -20,8 +33,10 @@ export function useCloudStorage(key, initialValue) {
           });
           if (response.ok) {
             const data = await response.json();
-            if (data.record && Object.keys(data.record).length > 0) {
-              setStoredValue(data.record);
+            const normalized = normalizeData(data.record);
+            if (Object.keys(normalized).length > 0) {
+              setStoredValue(normalized);
+              localStorage.setItem(key, JSON.stringify(normalized));
               setLoading(false);
               return;
             }
@@ -30,14 +45,15 @@ export function useCloudStorage(key, initialValue) {
         const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && (Array.isArray(parsed) ? parsed.length > 0 : Object.keys(parsed).length > 0)) {
-            setStoredValue(parsed);
+          const normalized = normalizeData(parsed);
+          if (Object.keys(normalized).length > 0) {
+            setStoredValue(normalized);
           }
         }
       } catch (error) {
         console.error('Cloud load error:', error);
         const saved = localStorage.getItem(key);
-        if (saved) setStoredValue(JSON.parse(saved));
+        if (saved) setStoredValue(normalizeData(JSON.parse(saved)));
       }
       setLoading(false);
     };
@@ -47,7 +63,7 @@ export function useCloudStorage(key, initialValue) {
   const saveToCloud = async (value) => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      
+
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(async () => {
         try {
