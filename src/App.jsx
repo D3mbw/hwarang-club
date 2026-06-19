@@ -7,15 +7,47 @@ import TrainingPlanList from './components/TrainingPlanList';
 import PhotoGallery from './components/PhotoGallery';
 import PlanEditor from './components/PlanEditor';
 import Footer from './components/Footer';
-import { useCloudStorage } from './hooks/useCloudStorage';
 import './styles/global.css';
 
+const STORAGE_KEY_PLANS = 'hwarang-plans-v2';
+const STORAGE_KEY_PHOTOS = 'hwarang-photos-v2';
+
+function loadData(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return {};
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) {
+      const obj = {};
+      parsed.forEach((item) => {
+        if (item && item.id) obj[item.id] = item;
+      });
+      return obj;
+    }
+    if (typeof parsed === 'object' && parsed !== null) return parsed;
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+function saveData(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.error('Save error:', e);
+  }
+}
+
 function App() {
-  const [plansObj, setPlansObj, plansLoading] = useCloudStorage('hwarang-plans', {});
-  const [photosObj, setPhotosObj, photosLoading] = useCloudStorage('hwarang-photos', {});
+  const [plansObj, setPlansObj] = useState(() => loadData(STORAGE_KEY_PLANS));
+  const [photosObj, setPhotosObj] = useState(() => loadData(STORAGE_KEY_PHOTOS));
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+
+  useEffect(() => { saveData(STORAGE_KEY_PLANS, plansObj); }, [plansObj]);
+  useEffect(() => { saveData(STORAGE_KEY_PHOTOS, photosObj); }, [photosObj]);
 
   const plans = Object.values(plansObj || {}).sort((a, b) =>
     new Date(b.createdAt) - new Date(a.createdAt)
@@ -55,8 +87,7 @@ function App() {
   };
 
   const handleSavePlan = (plan) => {
-    const updated = { ...plansObj, [plan.id]: plan };
-    setPlansObj(updated);
+    setPlansObj((prev) => ({ ...prev, [plan.id]: plan }));
     setShowEditor(false);
     setEditingPlan(null);
   };
@@ -67,37 +98,52 @@ function App() {
   };
 
   const handleDeletePlan = (id) => {
-    const updated = { ...plansObj };
-    delete updated[id];
-    setPlansObj(updated);
+    setPlansObj((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
   };
 
   const handleAddPhoto = (photo) => {
-    const updated = { ...photosObj, [photo.id]: photo };
-    setPhotosObj(updated);
+    setPhotosObj((prev) => ({ ...prev, [photo.id]: photo }));
   };
 
   const handleDeletePhoto = (id) => {
-    const updated = { ...photosObj };
-    delete updated[id];
-    setPhotosObj(updated);
+    setPhotosObj((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
   };
 
-  if (plansLoading || photosLoading) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: 'var(--bg-primary)',
-        color: 'var(--text-secondary)',
-        fontSize: '18px',
-      }}>
-        Загрузка...
-      </div>
-    );
-  }
+  const handleExportData = () => {
+    const data = { plans: plansObj, photos: photosObj };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hwarang-data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.plans) setPlansObj(data.plans);
+        if (data.photos) setPhotosObj(data.photos);
+        alert('Данные импортированы!');
+      } catch {
+        alert('Ошибка при импорте файла');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <div>
@@ -118,6 +164,49 @@ function App() {
         onUpload={handleAddPhoto}
         onDelete={handleDeletePhoto}
       />
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '12px',
+        padding: '20px',
+        flexWrap: 'wrap',
+      }}>
+        <button
+          onClick={handleExportData}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: '1px solid var(--accent)',
+            background: 'transparent',
+            color: 'var(--accent-light)',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Экспорт данных
+        </button>
+        <label style={{
+          padding: '10px 20px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+          background: 'transparent',
+          color: 'var(--text-secondary)',
+          fontSize: '14px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}>
+          Импорт данных
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleImportData}
+            style={{ display: 'none' }}
+          />
+        </label>
+      </div>
+
       <Footer />
 
       <AnimatePresence>
