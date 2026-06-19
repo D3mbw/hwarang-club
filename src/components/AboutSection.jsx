@@ -1,108 +1,41 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const sectionStyle = {
-  padding: '100px 40px',
-  maxWidth: '1200px',
-  margin: '0 auto',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-  gap: '60px',
-  alignItems: 'center',
-};
-
-const textStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '20px',
-};
-
-const subtitleStyle = {
-  fontSize: '14px',
-  color: 'var(--accent)',
-  textTransform: 'uppercase',
-  letterSpacing: '3px',
-  fontWeight: 600,
-};
-
-const titleStyle = {
-  fontSize: 'clamp(28px, 4vw, 42px)',
-  fontWeight: 800,
-  lineHeight: 1.2,
-};
-
-const descStyle = {
-  fontSize: '16px',
-  color: 'var(--text-secondary)',
-  lineHeight: 1.8,
-};
-
-const statsStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '20px',
-  marginTop: '10px',
-};
-
-const statStyle = {
-  textAlign: 'center',
-  padding: '20px',
-  borderRadius: 'var(--radius)',
-  background: 'var(--bg-secondary)',
-  border: '1px solid var(--border)',
-};
-
-const statNumberStyle = {
-  fontSize: '32px',
-  fontWeight: 800,
-  background: 'var(--gradient-blue)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-};
-
-const statLabelStyle = {
-  fontSize: '13px',
-  color: 'var(--text-secondary)',
-  marginTop: '6px',
-};
-
-const imageContainerStyle = {
-  position: 'relative',
-  borderRadius: 'var(--radius-lg)',
-  overflow: 'hidden',
-  aspectRatio: '1',
-  background: 'var(--bg-secondary)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const logoBigStyle = {
-  width: '80%',
-  height: 'auto',
-  objectFit: 'contain',
-  filter: 'drop-shadow(0 0 40px rgba(0, 102, 255, 0.3))',
-};
-
-const glowStyle = {
-  position: 'absolute',
-  inset: 0,
-  background: 'radial-gradient(circle at center, rgba(0, 102, 255, 0.15) 0%, transparent 70%)',
-  pointerEvents: 'none',
-};
-
 export default function AboutSection() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <motion.section
       id="about"
-      style={sectionStyle}
+      style={{
+        padding: isMobile ? '60px 20px' : '100px 40px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
+        gap: isMobile ? '40px' : '60px',
+        alignItems: 'center',
+      }}
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
     >
-      <div style={textStyle}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <motion.div
-          style={subtitleStyle}
+          style={{
+            fontSize: '14px',
+            color: 'var(--accent)',
+            textTransform: 'uppercase',
+            letterSpacing: '3px',
+            fontWeight: 600,
+          }}
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -112,7 +45,11 @@ export default function AboutSection() {
         </motion.div>
 
         <motion.h2
-          style={titleStyle}
+          style={{
+            fontSize: isMobile ? '28px' : 'clamp(28px, 4vw, 42px)',
+            fontWeight: 800,
+            lineHeight: 1.2,
+          }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -122,7 +59,11 @@ export default function AboutSection() {
         </motion.h2>
 
         <motion.p
-          style={descStyle}
+          style={{
+            fontSize: isMobile ? '15px' : '16px',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.8,
+          }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -135,7 +76,12 @@ export default function AboutSection() {
         </motion.p>
 
         <motion.div
-          style={statsStyle}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: isMobile ? '10px' : '20px',
+            marginTop: '10px',
+          }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -148,29 +94,70 @@ export default function AboutSection() {
           ].map((stat, i) => (
             <motion.div
               key={i}
-              style={statStyle}
+              style={{
+                textAlign: 'center',
+                padding: isMobile ? '14px 8px' : '20px',
+                borderRadius: 'var(--radius)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+              }}
               whileHover={{ borderColor: 'var(--accent)', y: -4 }}
               transition={{ duration: 0.3 }}
             >
-              <div style={statNumberStyle}>{stat.number}</div>
-              <div style={statLabelStyle}>{stat.label}</div>
+              <div style={{
+                fontSize: isMobile ? '24px' : '32px',
+                fontWeight: 800,
+                background: 'var(--gradient-blue)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                {stat.number}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '11px' : '13px',
+                color: 'var(--text-secondary)',
+                marginTop: '6px',
+              }}>
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </motion.div>
       </div>
 
       <motion.div
-        style={imageContainerStyle}
+        style={{
+          position: 'relative',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          aspectRatio: '1',
+          background: 'var(--bg-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          maxWidth: isMobile ? '280px' : 'none',
+          margin: isMobile ? '0 auto' : '0',
+        }}
         initial={{ opacity: 0, scale: 0.9 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ delay: 0.3, duration: 0.6 }}
       >
-        <div style={glowStyle} />
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at center, rgba(0, 102, 255, 0.15) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
         <img
           src="/hwarang-club/logo.jpg"
           alt="Хваран логотип"
-          style={logoBigStyle}
+          style={{
+            width: '80%',
+            height: 'auto',
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 0 40px rgba(0, 102, 255, 0.3))',
+          }}
         />
       </motion.div>
     </motion.section>

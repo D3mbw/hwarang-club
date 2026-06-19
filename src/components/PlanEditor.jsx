@@ -1,159 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const overlayStyle = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0, 0, 0, 0.7)',
-  backdropFilter: 'blur(10px)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 2000,
-  padding: '20px',
-};
-
-const modalStyle = {
-  background: 'var(--bg-secondary)',
-  borderRadius: 'var(--radius-lg)',
-  padding: '40px',
-  maxWidth: '600px',
-  width: '100%',
-  maxHeight: '90vh',
-  overflowY: 'auto',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--shadow)',
-};
-
-const titleStyle = {
-  fontSize: '28px',
-  fontWeight: 700,
-  marginBottom: '30px',
-  background: 'var(--gradient-blue)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-};
-
-const formGroupStyle = {
-  marginBottom: '20px',
-};
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '14px',
-  fontWeight: 600,
-  color: 'var(--text-secondary)',
-  marginBottom: '8px',
-  textTransform: 'uppercase',
-  letterSpacing: '1px',
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: '14px 18px',
-  borderRadius: 'var(--radius)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-primary)',
-  color: 'var(--text-primary)',
-  fontSize: '15px',
-  transition: 'border-color 0.3s, box-shadow 0.3s',
-};
-
-const textareaStyle = {
-  ...inputStyle,
-  minHeight: '120px',
-  resize: 'vertical',
-};
-
-const exerciseListStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  marginBottom: '15px',
-};
-
-const exerciseItemStyle = {
-  display: 'flex',
-  gap: '10px',
-  alignItems: 'center',
-};
-
-const exerciseInputStyle = {
-  ...inputStyle,
-  flex: 1,
-};
-
-const addBtnStyle = {
-  padding: '10px 20px',
-  borderRadius: 'var(--radius)',
-  border: '1px dashed var(--accent)',
-  background: 'transparent',
-  color: 'var(--accent-light)',
-  fontSize: '14px',
-  fontWeight: 600,
-  transition: 'all 0.3s',
-};
-
-const removeBtnStyle = {
-  width: '36px',
-  height: '36px',
-  borderRadius: '50%',
-  border: '1px solid var(--danger)',
-  background: 'transparent',
-  color: 'var(--danger)',
-  fontSize: '18px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.3s',
-};
-
-const actionsStyle = {
-  display: 'flex',
-  gap: '15px',
-  marginTop: '30px',
-};
-
-const saveBtnStyle = {
-  flex: 1,
-  padding: '14px',
-  borderRadius: 'var(--radius)',
-  background: 'var(--gradient-blue)',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: 600,
-  boxShadow: '0 4px 20px rgba(0, 102, 255, 0.3)',
-  transition: 'all 0.3s',
-};
-
-const cancelBtnStyle = {
-  flex: 1,
-  padding: '14px',
-  borderRadius: 'var(--radius)',
-  background: 'transparent',
-  border: '1px solid var(--border)',
-  color: 'var(--text-secondary)',
-  fontSize: '16px',
-  fontWeight: 600,
-  transition: 'all 0.3s',
-};
 
 export default function PlanEditor({ plan, onSave, onClose }) {
   const [title, setTitle] = useState(plan?.title || '');
   const [date, setDate] = useState(plan?.date || new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState(plan?.description || '');
   const [exercises, setExercises] = useState(plan?.exercises || ['']);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  const handleAddExercise = () => {
-    setExercises([...exercises, '']);
-  };
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
+  const handleAddExercise = () => setExercises([...exercises, '']);
   const handleRemoveExercise = (index) => {
-    if (exercises.length > 1) {
-      setExercises(exercises.filter((_, i) => i !== index));
-    }
+    if (exercises.length > 1) setExercises(exercises.filter((_, i) => i !== index));
   };
-
   const handleExerciseChange = (index, value) => {
     const updated = [...exercises];
     updated[index] = value;
@@ -163,7 +27,6 @@ export default function PlanEditor({ plan, onSave, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-
     onSave({
       id: plan?.id || Date.now().toString(),
       title: title.trim(),
@@ -177,29 +40,76 @@ export default function PlanEditor({ plan, onSave, onClose }) {
   return (
     <AnimatePresence>
       <motion.div
-        style={overlayStyle}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: isMobile ? '10px' : '20px',
+          overflowY: 'auto',
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          style={modalStyle}
+          style={{
+            background: 'var(--bg-secondary)',
+            borderRadius: isMobile ? '16px' : 'var(--radius-lg)',
+            padding: isMobile ? '24px 18px' : '40px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: isMobile ? '95vh' : '90vh',
+            overflowY: 'auto',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow)',
+            marginTop: isMobile ? '50px' : 0,
+          }}
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.95 }}
           transition={{ duration: 0.3 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <h2 style={titleStyle}>
+          <h2 style={{
+            fontSize: isMobile ? '22px' : '28px',
+            fontWeight: 700,
+            marginBottom: isMobile ? '20px' : '30px',
+            background: 'var(--gradient-blue)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
             {plan ? 'Редактировать план' : 'Новый план тренировки'}
           </h2>
 
           <form onSubmit={handleSubmit}>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Название</label>
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}>
+                Название
+              </label>
               <input
-                style={inputStyle}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '12px 14px' : '14px 18px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  fontSize: '15px',
+                }}
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -208,42 +118,98 @@ export default function PlanEditor({ plan, onSave, onClose }) {
               />
             </div>
 
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Дата</label>
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}>
+                Дата
+              </label>
               <input
-                style={inputStyle}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '12px 14px' : '14px 18px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  fontSize: '15px',
+                }}
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
 
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Описание</label>
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}>
+                Описание
+              </label>
               <textarea
-                style={textareaStyle}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '12px 14px' : '14px 18px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  fontSize: '15px',
+                  minHeight: isMobile ? '80px' : '120px',
+                  resize: 'vertical',
+                }}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Описание тренировки..."
               />
             </div>
 
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Упражнения</label>
-              <div style={exerciseListStyle}>
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}>
+                Упражнения
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
                 {exercises.map((exercise, index) => (
                   <motion.div
                     key={index}
-                    style={exerciseItemStyle}
+                    style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <span style={{ color: 'var(--accent)', fontWeight: 600, minWidth: '24px' }}>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600, minWidth: '22px', fontSize: '14px' }}>
                       {index + 1}.
                     </span>
                     <input
-                      style={exerciseInputStyle}
+                      style={{
+                        flex: 1,
+                        padding: isMobile ? '10px 12px' : '14px 18px',
+                        borderRadius: 'var(--radius)',
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-primary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '14px',
+                      }}
                       type="text"
                       value={exercise}
                       onChange={(e) => handleExerciseChange(index, e.target.value)}
@@ -251,7 +217,19 @@ export default function PlanEditor({ plan, onSave, onClose }) {
                     />
                     <motion.button
                       type="button"
-                      style={removeBtnStyle}
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '50%',
+                        border: '1px solid var(--danger)',
+                        background: 'transparent',
+                        color: 'var(--danger)',
+                        fontSize: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
                       whileHover={{ background: 'var(--danger)', color: '#fff' }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => handleRemoveExercise(index)}
@@ -263,7 +241,16 @@ export default function PlanEditor({ plan, onSave, onClose }) {
               </div>
               <motion.button
                 type="button"
-                style={addBtnStyle}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px dashed var(--accent)',
+                  background: 'transparent',
+                  color: 'var(--accent-light)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  width: isMobile ? '100%' : 'auto',
+                }}
                 whileHover={{ background: 'rgba(0, 102, 255, 0.1)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAddExercise}
@@ -272,10 +259,24 @@ export default function PlanEditor({ plan, onSave, onClose }) {
               </motion.button>
             </div>
 
-            <div style={actionsStyle}>
+            <div style={{
+              display: 'flex',
+              gap: isMobile ? '10px' : '15px',
+              marginTop: isMobile ? '20px' : '30px',
+              flexDirection: isMobile ? 'column' : 'row',
+            }}>
               <motion.button
                 type="button"
-                style={cancelBtnStyle}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: 'var(--radius)',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                }}
                 whileHover={{ borderColor: 'var(--text-secondary)', color: '#fff' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onClose}
@@ -284,7 +285,16 @@ export default function PlanEditor({ plan, onSave, onClose }) {
               </motion.button>
               <motion.button
                 type="submit"
-                style={saveBtnStyle}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--gradient-blue)',
+                  color: '#fff',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 20px rgba(0, 102, 255, 0.3)',
+                }}
                 whileHover={{ boxShadow: '0 8px 40px rgba(0, 102, 255, 0.5)' }}
                 whileTap={{ scale: 0.98 }}
               >

@@ -1,132 +1,113 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const footerStyle = {
-  padding: '60px 40px 30px',
-  borderTop: '1px solid var(--border)',
-  background: 'var(--bg-secondary)',
-};
-
-const contentStyle = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-  gap: '40px',
-  marginBottom: '40px',
-};
-
-const columnStyle = {};
-
-const logoStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  marginBottom: '16px',
-};
-
-const logoImgStyle = {
-  width: '50px',
-  height: '50px',
-  borderRadius: '8px',
-  objectFit: 'cover',
-};
-
-const logoTextStyle = {
-  fontSize: '20px',
-  fontWeight: 800,
-  letterSpacing: '2px',
-  background: 'var(--gradient-blue)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-};
-
-const textStyle = {
-  color: 'var(--text-secondary)',
-  fontSize: '14px',
-  lineHeight: 1.8,
-};
-
-const headingStyle = {
-  fontSize: '14px',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '2px',
-  color: 'var(--text-primary)',
-  marginBottom: '20px',
-};
-
-const linkStyle = {
-  display: 'block',
-  color: 'var(--text-secondary)',
-  fontSize: '14px',
-  marginBottom: '12px',
-  transition: 'color 0.3s',
-  cursor: 'pointer',
-};
-
-const dividerStyle = {
-  height: '1px',
-  background: 'var(--border)',
-  maxWidth: '1200px',
-  margin: '0 auto 20px',
-};
-
-const copyrightStyle = {
-  textAlign: 'center',
-  color: 'var(--text-secondary)',
-  fontSize: '13px',
-  opacity: 0.6,
-};
-
 export default function Footer() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <motion.footer
-      style={footerStyle}
+      style={{
+        padding: isMobile ? '40px 20px 24px' : '60px 40px 30px',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-secondary)',
+      }}
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
     >
-      <div style={contentStyle}>
-        <div style={columnStyle}>
-          <div style={logoStyle}>
-            <img src="/hwarang-club/logo.jpg" alt="Хваран" style={logoImgStyle} />
-            <span style={logoTextStyle}>ХВАРАН</span>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: isMobile ? '30px' : '40px',
+        marginBottom: '40px',
+      }}>
+        <div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginBottom: '16px',
+          }}>
+            <img
+              src="/hwarang-club/logo.jpg"
+              alt="Хваран"
+              style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }}
+            />
+            <span style={{
+              fontSize: '20px',
+              fontWeight: 800,
+              letterSpacing: '2px',
+              background: 'var(--gradient-blue)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              ХВАРАН
+            </span>
           </div>
-          <p style={textStyle}>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            lineHeight: 1.8,
+          }}>
             Клуб таеквондо «Хваран» — путь воина начинается с первого удара.
             Тренировки для всех уровней подготовки.
           </p>
         </div>
 
-        <div style={columnStyle}>
-          <h4 style={headingStyle}>Навигация</h4>
-          <motion.a
-            href="#hero"
-            style={linkStyle}
-            whileHover={{ color: '#ffffff', x: 4 }}
-          >
-            Главная
-          </motion.a>
-          <motion.a
-            href="#plans"
-            style={linkStyle}
-            whileHover={{ color: '#ffffff', x: 4 }}
-          >
-            Планы тренировок
-          </motion.a>
-          <motion.a
-            href="#gallery"
-            style={linkStyle}
-            whileHover={{ color: '#ffffff', x: 4 }}
-          >
-            Галерея
-          </motion.a>
+        <div>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            color: 'var(--text-primary)',
+            marginBottom: '20px',
+          }}>
+            Навигация
+          </h4>
+          {['Главная', 'О клубе', 'Планы тренировок', 'Галерея'].map((item) => (
+            <motion.a
+              key={item}
+              href={`#${item === 'Главная' ? 'hero' : item === 'О клубе' ? 'about' : item === 'Планы тренировок' ? 'plans' : 'gallery'}`}
+              style={{
+                display: 'block',
+                color: 'var(--text-secondary)',
+                fontSize: '14px',
+                marginBottom: '12px',
+                cursor: 'pointer',
+              }}
+              whileHover={{ color: '#ffffff', x: 4 }}
+            >
+              {item}
+            </motion.a>
+          ))}
         </div>
 
-        <div style={columnStyle}>
-          <h4 style={headingStyle}>Контакты</h4>
-          <p style={textStyle}>
+        <div>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            color: 'var(--text-primary)',
+            marginBottom: '20px',
+          }}>
+            Контакты
+          </h4>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            lineHeight: 1.8,
+          }}>
             info@hwarang.club<br />
             +7 (XXX) XXX-XX-XX<br />
             г. Москва
@@ -134,8 +115,18 @@ export default function Footer() {
         </div>
       </div>
 
-      <div style={dividerStyle} />
-      <p style={copyrightStyle}>
+      <div style={{
+        height: '1px',
+        background: 'var(--border)',
+        maxWidth: '1200px',
+        margin: '0 auto 20px',
+      }} />
+      <p style={{
+        textAlign: 'center',
+        color: 'var(--text-secondary)',
+        fontSize: '13px',
+        opacity: 0.6,
+      }}>
         © {new Date().getFullYear()} Хваран — Клуб таеквондо. Все права защищены.
       </p>
     </motion.footer>
