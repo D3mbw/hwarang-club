@@ -7,15 +7,22 @@ import TrainingPlanList from './components/TrainingPlanList';
 import PhotoGallery from './components/PhotoGallery';
 import PlanEditor from './components/PlanEditor';
 import Footer from './components/Footer';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useCloudStorage } from './hooks/useCloudStorage';
 import './styles/global.css';
 
 function App() {
-  const [plans, setPlans] = useLocalStorage('hwarang-plans', []);
-  const [photos, setPhotos] = useLocalStorage('hwarang-photos', []);
+  const [plansObj, setPlansObj, plansLoading] = useCloudStorage('hwarang-plans', {});
+  const [photosObj, setPhotosObj, photosLoading] = useCloudStorage('hwarang-photos', {});
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+
+  const plans = Object.values(plansObj || {}).sort((a, b) =>
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  const photos = Object.values(photosObj || {}).sort((a, b) =>
+    new Date(b.uploadedAt) - new Date(a.uploadedAt)
+  );
 
   useEffect(() => {
     let ticking = false;
@@ -44,19 +51,12 @@ function App() {
 
   const handleNavigate = (id) => {
     const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSavePlan = (plan) => {
-    setPlans((prev) => {
-      const existing = prev.find((p) => p.id === plan.id);
-      if (existing) {
-        return prev.map((p) => (p.id === plan.id ? plan : p));
-      }
-      return [plan, ...prev];
-    });
+    const updated = { ...plansObj, [plan.id]: plan };
+    setPlansObj(updated);
     setShowEditor(false);
     setEditingPlan(null);
   };
@@ -67,16 +67,37 @@ function App() {
   };
 
   const handleDeletePlan = (id) => {
-    setPlans((prev) => prev.filter((p) => p.id !== id));
+    const updated = { ...plansObj };
+    delete updated[id];
+    setPlansObj(updated);
   };
 
   const handleAddPhoto = (photo) => {
-    setPhotos((prev) => [photo, ...prev]);
+    const updated = { ...photosObj, [photo.id]: photo };
+    setPhotosObj(updated);
   };
 
   const handleDeletePhoto = (id) => {
-    setPhotos((prev) => prev.filter((p) => p.id !== id));
+    const updated = { ...photosObj };
+    delete updated[id];
+    setPhotosObj(updated);
   };
+
+  if (plansLoading || photosLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-secondary)',
+        fontSize: '18px',
+      }}>
+        Загрузка...
+      </div>
+    );
+  }
 
   return (
     <div>
