@@ -18,13 +18,26 @@ const contentStyle = {
 const columnStyle = {};
 
 const logoStyle = {
-  fontSize: '24px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  marginBottom: '16px',
+};
+
+const logoImgStyle = {
+  width: '50px',
+  height: '50px',
+  borderRadius: '8px',
+  objectFit: 'cover',
+};
+
+const logoTextStyle = {
+  fontSize: '20px',
   fontWeight: 800,
   letterSpacing: '2px',
   background: 'var(--gradient-blue)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
-  marginBottom: '16px',
 };
 
 const textStyle = {
@@ -76,7 +89,10 @@ export default function Footer() {
     >
       <div style={contentStyle}>
         <div style={columnStyle}>
-          <div style={logoStyle}>ХВАРАН</div>
+          <div style={logoStyle}>
+            <img src="/hwarang-club/logo.jpg" alt="Хваран" style={logoImgStyle} />
+            <span style={logoTextStyle}>ХВАРАН</span>
+          </div>
           <p style={textStyle}>
             Клуб таеквондо «Хваран» — путь воина начинается с первого удара.
             Тренировки для всех уровней подготовки.

@@ -83,6 +83,13 @@ const subtitleStyle = {
   lineHeight: 1.7,
 };
 
+const heroLogoStyle = {
+  width: 'clamp(150px, 25vw, 280px)',
+  height: 'auto',
+  marginBottom: '30px',
+  filter: 'drop-shadow(0 0 30px rgba(0, 102, 255, 0.4))',
+};
+
 const ctaStyle = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -136,6 +143,15 @@ export default function HeroSection({ onNavigate }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
+        <motion.img
+          src="/hwarang-club/logo.jpg"
+          alt="Хваран клуб"
+          style={heroLogoStyle}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.8 }}
+        />
+
         <motion.div
           style={badgeStyle}
           initial={{ opacity: 0, scale: 0.8 }}

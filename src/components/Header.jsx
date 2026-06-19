@@ -30,16 +30,10 @@ const logoStyle = {
 };
 
 const logoIconStyle = {
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  background: 'var(--gradient-blue)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '18px',
-  color: '#fff',
-  fontWeight: 800,
+  width: '44px',
+  height: '44px',
+  borderRadius: '10px',
+  objectFit: 'cover',
 };
 
 const navStyle = {
@@ -72,7 +66,7 @@ export default function Header({ activeSection, onNavigate }) {
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <div style={logoStyle}>
-        <div style={logoIconStyle}>H</div>
+        <img src="/hwarang-club/logo.jpg" alt="Хваран" style={logoIconStyle} />
         ХВАРАН
       </div>
       <nav>
