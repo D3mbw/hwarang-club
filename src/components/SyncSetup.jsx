@@ -1,23 +1,52 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function SyncSetup({ onSetToken, hasToken, onReset }) {
+function compress(data) {
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
+  catch { return ''; }
+}
+
+function decompress(str) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(str)))); }
+  catch { return null; }
+}
+
+export default function SyncSetup({ onImport, onReset }) {
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState('');
+  const [tab, setTab] = useState('copy');
+  const [copied, setCopied] = useState(false);
+  const [importText, setImportText] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const handleSave = () => {
-    if (input.trim()) {
-      onSetToken(input.trim());
-      setOpen(false);
-      setInput('');
+  const handleCopy = async () => {
+    const plans = JSON.parse(localStorage.getItem('hwarang-plans') || '{}');
+    const photos = JSON.parse(localStorage.getItem('hwarang-photos') || '{}');
+    const code = compress({ plans, photos });
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = code;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      document.body.removeChild(t);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handleReset = () => {
-    onReset();
-    setConfirmReset(false);
-    setOpen(false);
+  const handleImport = () => {
+    const data = decompress(importText.trim());
+    if (data && data.plans) {
+      onImport(data);
+      setImportText('');
+      setOpen(false);
+    } else {
+      alert('Неверный код. Убедитесь, что скопировали весь код.');
+    }
   };
 
   return (
@@ -25,26 +54,16 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
       <motion.button
         onClick={() => setOpen(true)}
         style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          background: hasToken ? 'var(--success)' : 'var(--gradient-blue)',
-          color: '#fff',
-          fontSize: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(0, 102, 255, 0.4)',
-          zIndex: 100,
-          border: 'none',
+          position: 'fixed', bottom: '20px', right: '20px',
+          width: '50px', height: '50px', borderRadius: '50%',
+          background: 'var(--gradient-blue)', color: '#fff', fontSize: '18px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 20px rgba(0, 102, 255, 0.4)', zIndex: 100, border: 'none',
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
-        {hasToken ? '☁' : '⚙'}
+        ☰
       </motion.button>
 
       <AnimatePresence>
@@ -56,15 +75,13 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
               alignItems: 'center', justifyContent: 'center',
               zIndex: 2000, padding: '20px',
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
           >
             <motion.div
               style={{
                 background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)',
-                padding: '32px', maxWidth: '480px', width: '100%',
+                padding: '28px', maxWidth: '440px', width: '100%',
                 border: '1px solid var(--border)',
               }}
               initial={{ scale: 0.9, y: 30 }}
@@ -73,63 +90,92 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 style={{
-                fontSize: '22px', fontWeight: 700, marginBottom: '16px',
+                fontSize: '20px', fontWeight: 700, marginBottom: '20px',
                 background: 'var(--gradient-blue)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
-                Облачная синхронизация
+                Синхронизация
               </h3>
 
-              <p style={{
-                color: 'var(--text-secondary)', fontSize: '14px',
-                lineHeight: 1.7, marginBottom: '16px',
-              }}>
-                Данные хранятся в <b>GitHub Gist</b> (бесплатно). Чтение — автоматическое,
-                запись — через ваш GitHub-токен.
-              </p>
-
-              <p style={{
-                color: 'var(--text-secondary)', fontSize: '13px',
-                lineHeight: 1.8, marginBottom: '16px',
-                background: 'var(--bg-primary)', padding: '12px 14px',
-                borderRadius: 'var(--radius)',
-              }}>
-                <b>Как получить токен:</b><br/>
-                1. github.com → Settings → Developer settings<br/>
-                2. Personal access tokens → Tokens (classic)<br/>
-                3. Generate new token → галочка <b>gist</b> → Generate<br/>
-                4. Скопируйте токен и вставьте ниже
-              </p>
-
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                <input
-                  type="password"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxx"
-                  style={{
-                    flex: 1, padding: '12px 14px', borderRadius: 'var(--radius)',
-                    border: '1px solid var(--border)', background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)', fontSize: '14px',
-                  }}
-                />
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                 <motion.button
-                  onClick={handleSave}
+                  onClick={() => setTab('copy')}
                   style={{
-                    padding: '12px 20px', borderRadius: 'var(--radius)',
-                    background: 'var(--gradient-blue)', color: '#fff',
-                    fontSize: '14px', fontWeight: 600, border: 'none',
+                    flex: 1, padding: '10px', borderRadius: 'var(--radius)',
+                    background: tab === 'copy' ? 'var(--accent)' : 'transparent',
+                    color: '#fff', fontSize: '13px', fontWeight: 600,
+                    border: '1px solid var(--border)',
                   }}
-                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  OK
+                  Экспорт
+                </motion.button>
+                <motion.button
+                  onClick={() => setTab('paste')}
+                  style={{
+                    flex: 1, padding: '10px', borderRadius: 'var(--radius)',
+                    background: tab === 'paste' ? 'var(--accent)' : 'transparent',
+                    color: '#fff', fontSize: '13px', fontWeight: 600,
+                    border: '1px solid var(--border)',
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Импорт
                 </motion.button>
               </div>
 
-              {hasToken && (
+              {tab === 'copy' && (
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px', lineHeight: 1.6 }}>
+                    Нажмите кнопку, скопируйте код и откройте его на другом устройстве через вкладку «Импорт».
+                  </p>
+                  <motion.button
+                    onClick={handleCopy}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: 'var(--radius)',
+                      background: copied ? 'var(--success)' : 'var(--gradient-blue)',
+                      color: '#fff', fontSize: '15px', fontWeight: 600, border: 'none',
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {copied ? '✓ Скопировано!' : 'Копировать код'}
+                  </motion.button>
+                </div>
+              )}
+
+              {tab === 'paste' && (
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px', lineHeight: 1.6 }}>
+                    Вставьте скопированный код:
+                  </p>
+                  <textarea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    placeholder="Вставьте код сюда..."
+                    style={{
+                      width: '100%', height: '100px', padding: '12px',
+                      borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+                      background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                      fontSize: '13px', resize: 'none', fontFamily: 'monospace', marginBottom: '12px',
+                    }}
+                  />
+                  <motion.button
+                    onClick={handleImport}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: 'var(--radius)',
+                      background: 'var(--gradient-blue)', color: '#fff',
+                      fontSize: '15px', fontWeight: 600, border: 'none',
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Импортировать
+                  </motion.button>
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px solid var(--border)', marginTop: '20px', paddingTop: '16px' }}>
                 <motion.button
-                  onClick={() => { onSetToken(''); setOpen(false); }}
+                  onClick={() => setConfirmReset(true)}
                   style={{
                     width: '100%', padding: '10px', borderRadius: 'var(--radius)',
                     background: 'rgba(255,68,68,0.1)', color: 'var(--danger)',
@@ -138,22 +184,9 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
                   }}
                   whileHover={{ background: 'rgba(255,68,68,0.2)' }}
                 >
-                  Отключить синхронизацию
+                  Сбросить все данные
                 </motion.button>
-              )}
-
-              <motion.button
-                onClick={() => setConfirmReset(true)}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 'var(--radius)',
-                  background: 'rgba(255,165,0,0.1)', color: '#ffa500',
-                  fontSize: '13px', fontWeight: 600, marginTop: '10px',
-                  border: '1px solid rgba(255,165,0,0.2)',
-                }}
-                whileHover={{ background: 'rgba(255,165,0,0.2)' }}
-              >
-                Сбросить все данные
-              </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -193,7 +226,7 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
                   Отмена
                 </motion.button>
                 <motion.button
-                  onClick={handleReset}
+                  onClick={() => { onReset(); setConfirmReset(false); setOpen(false); }}
                   style={{
                     padding: '10px 24px', borderRadius: 'var(--radius)',
                     background: 'var(--danger)', color: '#fff',
@@ -201,7 +234,7 @@ export default function SyncSetup({ onSetToken, hasToken, onReset }) {
                   }}
                   whileHover={{ opacity: 0.9 }}
                 >
-                  Удалить всё
+                  Удалить
                 </motion.button>
               </div>
             </motion.div>
