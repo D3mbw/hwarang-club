@@ -56,7 +56,7 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
         </p>
       </motion.div>
 
-      <PhotoUploader onUpload={onUpload} />
+      {onUpload && <PhotoUploader onUpload={onUpload} />}
 
       {photos.length > 0 && (
         <div style={{
@@ -111,6 +111,7 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
                   {photo.name}
                 </span>
               </div>
+              {onDelete && (
               <motion.button
                 style={{
                   position: 'absolute',
@@ -138,6 +139,7 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
               >
                 ×
               </motion.button>
+              )}
             </motion.div>
           ))}
         </div>

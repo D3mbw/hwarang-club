@@ -103,6 +103,7 @@ export default function TrainingPlanCard({ plan, onEdit, onDelete, index, isMobi
         </div>
       )}
 
+      {(onEdit || onDelete) && (
       <div style={{
         display: 'flex',
         gap: '10px',
@@ -110,6 +111,7 @@ export default function TrainingPlanCard({ plan, onEdit, onDelete, index, isMobi
         paddingTop: '14px',
         borderTop: '1px solid var(--border)',
       }}>
+        {onEdit && (
         <motion.button
           style={{
             padding: isMobile ? '8px 14px' : '8px 16px',
@@ -126,6 +128,8 @@ export default function TrainingPlanCard({ plan, onEdit, onDelete, index, isMobi
         >
           Изменить
         </motion.button>
+        )}
+        {onDelete && (
         <motion.button
           style={{
             padding: isMobile ? '8px 14px' : '8px 16px',
@@ -142,7 +146,9 @@ export default function TrainingPlanCard({ plan, onEdit, onDelete, index, isMobi
         >
           Удалить
         </motion.button>
+        )}
       </div>
+      )}
     </motion.div>
   );
 }

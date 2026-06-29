@@ -12,11 +12,13 @@ import { useCloudSync } from './hooks/useCloudSync';
 import './styles/global.css';
 
 function App() {
-  const [plansMap, setPlansMap, plansReady, setPlansToken, plansHasToken, resetPlans] = useCloudSync('hwarang-plans');
-  const [photosMap, setPhotosMap, photosReady, setPhotosToken, photosHasToken, resetPhotos] = useCloudSync('hwarang-photos');
+  const [plansMap, setPlansMap, plansReady, setPlansToken, plansIsAdmin, resetPlans] = useCloudSync('hwarang-plans');
+  const [photosMap, setPhotosMap, photosReady, setPhotosToken, photosIsAdmin, resetPhotos] = useCloudSync('hwarang-photos');
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
+
+  const isAdmin = plansIsAdmin;
 
   const plans = Object.values(plansMap || {}).sort((a, b) =>
     new Date(b.createdAt) - new Date(a.createdAt)
@@ -90,6 +92,17 @@ function App() {
     resetPhotos();
   };
 
+  const handleExport = () => {
+    const data = { plans: plansMap, photos: photosMap };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hwarang-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (!plansReady || !photosReady) {
     return (
       <div style={{
@@ -109,18 +122,23 @@ function App() {
       <AboutSection />
       <TrainingPlanList
         plans={plans}
-        onEdit={(plan) => { setEditingPlan(plan); setShowEditor(true); }}
-        onDelete={handleDeletePlan}
-        onAdd={() => { setEditingPlan(null); setShowEditor(true); }}
+        onEdit={isAdmin ? (plan) => { setEditingPlan(plan); setShowEditor(true); } : undefined}
+        onDelete={isAdmin ? handleDeletePlan : undefined}
+        onAdd={isAdmin ? () => { setEditingPlan(null); setShowEditor(true); } : undefined}
       />
       <PhotoGallery
         photos={photos}
-        onUpload={handleAddPhoto}
-        onDelete={handleDeletePhoto}
+        onUpload={isAdmin ? handleAddPhoto : undefined}
+        onDelete={isAdmin ? handleDeletePhoto : undefined}
       />
       <Footer />
 
-      <SyncSetup onSetToken={handleSetToken} hasToken={plansHasToken} onReset={handleReset} />
+      <SyncSetup
+        isAdmin={isAdmin}
+        onSetToken={handleSetToken}
+        onReset={handleReset}
+        onExport={handleExport}
+      />
 
       <AnimatePresence>
         {showEditor && (

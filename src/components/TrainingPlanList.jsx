@@ -68,6 +68,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
             Создайте первый план тренировки
           </p>
+          {onAdd && (
           <motion.button
             style={{
               display: 'inline-flex',
@@ -87,6 +88,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
           >
             + Создать план
           </motion.button>
+          )}
         </motion.div>
       ) : (
         <>
@@ -106,6 +108,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
               />
             ))}
           </div>
+          {onAdd && (
           <motion.div
             style={{ textAlign: 'center', marginTop: '32px' }}
             initial={{ opacity: 0 }}
@@ -132,6 +135,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
               + Новый план
             </motion.button>
           </motion.div>
+          )}
         </>
       )}
     </section>

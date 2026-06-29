@@ -23,12 +23,14 @@ export function useCloudSync(storageKey) {
   const shaRef = useRef(null);
   const latestRef = useRef({});
 
+  const isAdmin = !!tokenRef.current;
+
   useEffect(() => { latestRef.current = data; }, [data]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadFromGist() {
+    async function load() {
       try {
         const res = await fetch(`${RAW_URL}?t=${Date.now()}`);
         if (res.ok && !cancelled) {
@@ -37,9 +39,7 @@ export function useCloudSync(storageKey) {
           setData(norm);
           localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(norm));
         }
-      } catch (e) {
-        console.log('Load error:', e);
-      }
+      } catch {}
 
       if (!cancelled) {
         setReady(true);
@@ -47,7 +47,7 @@ export function useCloudSync(storageKey) {
       }
     }
 
-    loadFromGist();
+    load();
 
     return () => {
       cancelled = true;
@@ -91,7 +91,7 @@ export function useCloudSync(storageKey) {
 
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
 
-      const body = { message: `Update ${storageKey}`, content, branch: BRANCH };
+      const body = { message: `Update data: ${Date.now()}`, content, branch: BRANCH };
       if (sha) body.sha = sha;
 
       const res = await fetch(API_URL, {
@@ -110,7 +110,7 @@ export function useCloudSync(storageKey) {
     } catch (e) {
       console.error('GitHub save error:', e);
     }
-  }, [storageKey]);
+  }, []);
 
   const update = useCallback((fn) => {
     setData((prev) => {
@@ -138,6 +138,5 @@ export function useCloudSync(storageKey) {
     localStorage.removeItem(`hw-local-${storageKey}`);
   }, [storageKey]);
 
-  const hasToken = !!tokenRef.current;
-  return [data, update, ready, setToken, hasToken, resetData];
+  return [data, update, ready, setToken, isAdmin, resetData];
 }
