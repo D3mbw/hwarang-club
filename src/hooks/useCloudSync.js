@@ -27,6 +27,7 @@ export function useCloudSync(storageKey) {
   const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
   const shaRef = useRef(null);
   const latestRef = useRef(data);
+  const skipPollsRef = useRef(0);
 
   const isAdmin = !!tokenRef.current;
 
@@ -36,6 +37,11 @@ export function useCloudSync(storageKey) {
     let cancelled = false;
 
     async function load() {
+      if (skipPollsRef.current > 0) {
+        skipPollsRef.current--;
+        return;
+      }
+
       try {
         const url = `${RAW_URL}?_nocache=${Date.now()}`;
         const res = await fetch(url, { cache: 'no-store' });
@@ -47,16 +53,11 @@ export function useCloudSync(storageKey) {
             localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(norm));
           }
         }
-      } catch (e) {
-        console.log('Cloud fetch failed, using local data');
-      }
-      if (!cancelled) {
-        setReady(true);
-      }
+      } catch {}
+      if (!cancelled) setReady(true);
     }
 
     load();
-
     pollRef.current = setInterval(load, 8000);
 
     return () => {
@@ -83,7 +84,6 @@ export function useCloudSync(storageKey) {
       }
 
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
-
       const body = { message: `Update ${storageKey} ${Date.now()}`, content, branch: BRANCH };
       if (sha) body.sha = sha;
 
@@ -108,6 +108,7 @@ export function useCloudSync(storageKey) {
   }, []);
 
   const update = useCallback((fn) => {
+    skipPollsRef.current = 3;
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
       latestRef.current = next;
@@ -130,6 +131,7 @@ export function useCloudSync(storageKey) {
   }, []);
 
   const resetData = useCallback(() => {
+    skipPollsRef.current = 3;
     setData({});
     latestRef.current = {};
     localStorage.removeItem(`hw-cloud-${storageKey}`);
