@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function SyncSetup({ onSetKey, hasKey }) {
+export default function SyncSetup({ onSetKey, hasKey, onReset }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const handleSave = () => {
     if (input.trim()) {
@@ -11,6 +12,12 @@ export default function SyncSetup({ onSetKey, hasKey }) {
       setOpen(false);
       setInput('');
     }
+  };
+
+  const handleReset = () => {
+    onReset();
+    setConfirmReset(false);
+    setOpen(false);
   };
 
   return (
@@ -92,7 +99,10 @@ export default function SyncSetup({ onSetKey, hasKey }) {
                 marginBottom: '20px',
               }}>
                 Чтобы тренировки и фото синхронизировались между устройствами,
-                нужен бесплатный API-ключ от <a href="https://jsonbin.io" target="_blank" rel="noopener" style={{ color: 'var(--accent-light)' }}>jsonbin.io</a>:
+                нужен бесплатный API-ключ от{' '}
+                <a href="https://jsonbin.io" target="_blank" rel="noopener" style={{ color: 'var(--accent-light)' }}>
+                  jsonbin.io
+                </a>:
               </p>
 
               <ol style={{
@@ -142,26 +152,135 @@ export default function SyncSetup({ onSetKey, hasKey }) {
               </div>
 
               {hasKey && (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <motion.button
+                    onClick={() => {
+                      onSetKey('');
+                      setOpen(false);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: 'var(--radius)',
+                      background: 'rgba(255,68,68,0.1)',
+                      color: 'var(--danger)',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      border: '1px solid rgba(255,68,68,0.2)',
+                    }}
+                    whileHover={{ background: 'rgba(255,68,68,0.2)' }}
+                  >
+                    Отключить
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setConfirmReset(true)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: 'var(--radius)',
+                      background: 'rgba(255,165,0,0.1)',
+                      color: '#ffa500',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      border: '1px solid rgba(255,165,0,0.2)',
+                    }}
+                    whileHover={{ background: 'rgba(255,165,0,0.2)' }}
+                  >
+                    Сбросить данные
+                  </motion.button>
+                </div>
+              )}
+
+              {!hasKey && (
                 <motion.button
-                  onClick={() => {
-                    onSetKey('');
-                    setOpen(false);
-                  }}
+                  onClick={() => setConfirmReset(true)}
                   style={{
+                    width: '100%',
                     padding: '10px',
                     borderRadius: 'var(--radius)',
-                    background: 'rgba(255,68,68,0.1)',
-                    color: 'var(--danger)',
+                    background: 'rgba(255,165,0,0.1)',
+                    color: '#ffa500',
                     fontSize: '13px',
                     fontWeight: 600,
-                    border: '1px solid rgba(255,68,68,0.2)',
-                    width: '100%',
+                    border: '1px solid rgba(255,165,0,0.2)',
+                    marginTop: '10px',
                   }}
-                  whileHover={{ background: 'rgba(255,68,68,0.2)' }}
+                  whileHover={{ background: 'rgba(255,165,0,0.2)' }}
                 >
-                  Отключить синхронизацию
+                  Сбросить все данные
                 </motion.button>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmReset && (
+          <motion.div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 3000,
+              padding: '20px',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '28px',
+                maxWidth: '360px',
+                width: '100%',
+                border: '1px solid var(--border)',
+                textAlign: 'center',
+              }}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+            >
+              <p style={{ fontSize: '16px', marginBottom: '20px', color: '#fff' }}>
+                Удалить все планы и фото?
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <motion.button
+                  onClick={() => setConfirmReset(false)}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: 'var(--radius)',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  }}
+                  whileHover={{ borderColor: '#fff', color: '#fff' }}
+                >
+                  Отмена
+                </motion.button>
+                <motion.button
+                  onClick={handleReset}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: 'var(--radius)',
+                    background: 'var(--danger)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    border: 'none',
+                  }}
+                  whileHover={{ opacity: 0.9 }}
+                >
+                  Удалить всё
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}
