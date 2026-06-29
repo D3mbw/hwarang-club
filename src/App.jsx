@@ -12,8 +12,8 @@ import { useCloudSync } from './hooks/useCloudSync';
 import './styles/global.css';
 
 function App() {
-  const [plansMap, setPlansMap, plansReady, setPlansKey, plansHasKey, resetPlans] = useCloudSync('hwarang-plans');
-  const [photosMap, setPhotosMap, photosReady, setPhotosKey, photosHasKey, resetPhotos] = useCloudSync('hwarang-photos');
+  const [plansMap, setPlansMap, plansReady, setPlansToken, plansHasToken, resetPlans] = useCloudSync('hwarang-plans');
+  const [photosMap, setPhotosMap, photosReady, setPhotosToken, photosHasToken, resetPhotos] = useCloudSync('hwarang-photos');
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -80,9 +80,9 @@ function App() {
     });
   };
 
-  const handleSetKey = (key) => {
-    setPlansKey(key);
-    setPhotosKey(key);
+  const handleSetToken = (token) => {
+    setPlansToken(token);
+    setPhotosToken(token);
   };
 
   const handleReset = () => {
@@ -120,7 +120,7 @@ function App() {
       />
       <Footer />
 
-      <SyncSetup onSetKey={handleSetKey} hasKey={plansHasKey} onReset={handleReset} />
+      <SyncSetup onSetToken={handleSetToken} hasToken={plansHasToken} onReset={handleReset} />
 
       <AnimatePresence>
         {showEditor && (

@@ -1,78 +1,53 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const API = 'https://api.jsonbin.io/v3';
-const POLL_INTERVAL = 5000;
+const GIST_ID = '0101f37bf169913d855f04ab9ec17dfb';
+const API_URL = `https://api.github.com/gists/${GIST_ID}`;
 
 function normalize(data) {
-  if (!data) return {};
+  if (!data || typeof data !== 'object') return {};
   if (Array.isArray(data)) {
     const obj = {};
     data.forEach((item) => { if (item?.id) obj[item.id] = item; });
     return obj;
   }
-  return typeof data === 'object' ? data : {};
+  return data;
 }
 
 export function useCloudSync(storageKey) {
   const [data, setData] = useState({});
   const [ready, setReady] = useState(false);
-  const binIdRef = useRef(null);
-  const saveTimerRef = useRef(null);
   const pollRef = useRef(null);
-  const apiKeyRef = useRef(localStorage.getItem('hw-api-key') || '');
-  const latestDataRef = useRef({});
+  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
+  const latestRef = useRef({});
 
-  useEffect(() => {
-    latestDataRef.current = data;
-  }, [data]);
-
-  function startPolling() {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      if (!binIdRef.current || !apiKeyRef.current) return;
-      try {
-        const res = await fetch(`${API}/b/${binIdRef.current}/latest`, {
-          headers: { 'X-Access-Key': apiKeyRef.current }
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const norm = normalize(json.record);
-          const current = latestDataRef.current;
-          if (JSON.stringify(current) !== JSON.stringify(norm)) {
-            setData(norm);
-            localStorage.setItem(storageKey, JSON.stringify(norm));
-          }
-        }
-      } catch {}
-    }, POLL_INTERVAL);
-  }
+  useEffect(() => { latestRef.current = data; }, [data]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      const local = localStorage.getItem(storageKey);
-      if (local) {
-        try {
-          const parsed = normalize(JSON.parse(local));
-          if (!cancelled) setData(parsed);
-        } catch {}
+      try {
+        const res = await fetch(`${API_URL}?t=${Date.now()}`);
+        if (res.ok && !cancelled) {
+          const gist = await res.json();
+          const file = gist.files?.['data.json'];
+          if (file) {
+            const allData = JSON.parse(file.content);
+            const norm = normalize(allData[storageKey] || allData);
+            setData(norm);
+            localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(norm));
+          }
+        }
+      } catch (e) {
+        console.error('Gist load error:', e);
       }
 
-      const binKey = `hw-bin-${storageKey}`;
-      const savedBin = localStorage.getItem(binKey);
-
-      if (apiKeyRef.current && savedBin) {
-        binIdRef.current = savedBin;
+      const local = localStorage.getItem(`hw-local-${storageKey}`);
+      if (local && !cancelled) {
         try {
-          const res = await fetch(`${API}/b/${savedBin}/latest`, {
-            headers: { 'X-Access-Key': apiKeyRef.current }
-          });
-          if (res.ok && !cancelled) {
-            const json = await res.json();
-            const norm = normalize(json.record);
-            setData(norm);
-            localStorage.setItem(storageKey, JSON.stringify(norm));
+          const parsed = JSON.parse(local);
+          if (Object.keys(parsed).length > 0) {
+            setData(prev => Object.keys(prev).length === 0 ? normalize(parsed) : prev);
           }
         } catch {}
       }
@@ -84,90 +59,74 @@ export function useCloudSync(storageKey) {
     }
 
     init();
-
     return () => {
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [storageKey]);
 
-  const saveToCloud = useCallback((value) => {
-    if (!apiKeyRef.current) return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(async () => {
+  function startPolling() {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
       try {
-        const key = apiKeyRef.current;
-        if (binIdRef.current) {
-          const res = await fetch(`${API}/b/${binIdRef.current}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Access-Key': key,
-            },
-            body: JSON.stringify(value),
-          });
-          if (!res.ok) {
-            binIdRef.current = null;
-            localStorage.removeItem(`hw-bin-${storageKey}`);
-          }
-        } else {
-          const res = await fetch(`${API}/b`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Access-Key': key,
-              'X-Bin-Name': `hw-sync-${storageKey}-${Date.now()}`,
-            },
-            body: JSON.stringify(value),
-          });
-          if (res.ok) {
-            const json = await res.json();
-            binIdRef.current = json.metadata.id;
-            localStorage.setItem(`hw-bin-${storageKey}`, json.metadata.id);
+        const res = await fetch(`${API_URL}?t=${Date.now()}`);
+        if (res.ok) {
+          const gist = await res.json();
+          const file = gist.files?.['data.json'];
+          if (file) {
+            const allData = JSON.parse(file.content);
+            const norm = normalize(allData[storageKey] || allData);
+            if (JSON.stringify(latestRef.current) !== JSON.stringify(norm)) {
+              setData(norm);
+              localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(norm));
+            }
           }
         }
       } catch {}
-    }, 1000);
-  }, [storageKey]);
+    }, 5000);
+  }
 
   const update = useCallback((fn) => {
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
-      latestDataRef.current = next;
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      saveToCloud(next);
+      latestRef.current = next;
+      localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(next));
+      saveToGist(storageKey, next);
       return next;
     });
-  }, [storageKey, saveToCloud]);
+  }, [storageKey]);
 
-  const setApiKey = useCallback((key) => {
-    apiKeyRef.current = key;
-    localStorage.setItem('hw-api-key', key);
-    if (key) {
-      startPolling();
-    } else {
-      if (pollRef.current) clearInterval(pollRef.current);
+  const saveToGist = async (key, value) => {
+    const token = tokenRef.current;
+    if (!token) return;
+    try {
+      const fullData = { [key]: value };
+      const content = JSON.stringify(fullData, null, 2);
+      const body = { files: { 'data.json': { content } } };
+      await fetch(API_URL, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      console.error('Gist save error:', e);
     }
+  };
+
+  const setToken = useCallback((token) => {
+    tokenRef.current = token;
+    localStorage.setItem('hw-gh-token', token);
   }, []);
 
   const resetData = useCallback(() => {
     setData({});
-    latestDataRef.current = {};
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(`hw-bin-${storageKey}`);
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    if (apiKeyRef.current && binIdRef.current) {
-      fetch(`${API}/b/${binIdRef.current}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Access-Key': apiKeyRef.current,
-        },
-        body: JSON.stringify({}),
-      }).catch(() => {});
-    }
+    latestRef.current = {};
+    localStorage.removeItem(`hw-local-${storageKey}`);
   }, [storageKey]);
 
-  return [data, update, ready, setApiKey, !!apiKeyRef.current, resetData];
+  const hasToken = !!tokenRef.current;
+  return [data, update, ready, setToken, hasToken, resetData];
 }
