@@ -11,21 +11,28 @@ function decompress(str) {
   catch { return null; }
 }
 
-export default function SyncSetup({ onImport, onReset }) {
+export default function SyncSetup({ onSetToken, hasToken, onReset }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState('copy');
-  const [copied, setCopied] = useState(false);
-  const [importText, setImportText] = useState('');
+  const [tab, setTab] = useState('setup');
+  const [token, setToken] = useState('');
+  const [importCode, setImportCode] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
-    const plans = JSON.parse(localStorage.getItem('hwarang-plans') || '{}');
-    const photos = JSON.parse(localStorage.getItem('hwarang-photos') || '{}');
-    const code = compress({ plans, photos });
+  const handleSaveToken = () => {
+    if (token.trim()) {
+      onSetToken(token.trim());
+      setToken('');
+      setOpen(false);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    const plans = JSON.parse(localStorage.getItem('hw-local-hwarang-plans') || '{}');
+    const photos = JSON.parse(localStorage.getItem('hw-local-hwarang-photos') || '{}');
+    const code = compress({ 'hwarang-plans': plans, 'hwarang-photos': photos });
     try {
       await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       const t = document.createElement('textarea');
       t.value = code;
@@ -33,19 +40,23 @@ export default function SyncSetup({ onImport, onReset }) {
       t.select();
       document.execCommand('copy');
       document.body.removeChild(t);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleImport = () => {
-    const data = decompress(importText.trim());
-    if (data && data.plans) {
-      onImport(data);
-      setImportText('');
-      setOpen(false);
+  const handleImportCode = () => {
+    const data = decompress(importCode.trim());
+    if (data) {
+      if (data['hwarang-plans'] || data['hwarang-photos']) {
+        const plans = data['hwarang-plans'] || {};
+        const photos = data['hwarang-photos'] || {};
+        localStorage.setItem('hw-local-hwarang-plans', JSON.stringify(plans));
+        localStorage.setItem('hw-local-hwarang-photos', JSON.stringify(photos));
+        window.location.reload();
+      }
     } else {
-      alert('Неверный код. Убедитесь, что скопировали весь код.');
+      alert('Неверный код');
     }
   };
 
@@ -56,14 +67,15 @@ export default function SyncSetup({ onImport, onReset }) {
         style={{
           position: 'fixed', bottom: '20px', right: '20px',
           width: '50px', height: '50px', borderRadius: '50%',
-          background: 'var(--gradient-blue)', color: '#fff', fontSize: '18px',
+          background: hasToken ? 'var(--success)' : 'var(--gradient-blue)',
+          color: '#fff', fontSize: '18px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 20px rgba(0, 102, 255, 0.4)', zIndex: 100, border: 'none',
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
-        ☰
+        {hasToken ? '☁' : '⚙'}
       </motion.button>
 
       <AnimatePresence>
@@ -81,8 +93,8 @@ export default function SyncSetup({ onImport, onReset }) {
             <motion.div
               style={{
                 background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)',
-                padding: '28px', maxWidth: '440px', width: '100%',
-                border: '1px solid var(--border)',
+                padding: '28px', maxWidth: '480px', width: '100%',
+                border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto',
               }}
               initial={{ scale: 0.9, y: 30 }}
               animate={{ scale: 1, y: 0 }}
@@ -97,44 +109,103 @@ export default function SyncSetup({ onImport, onReset }) {
                 Синхронизация
               </h3>
 
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <motion.button
-                  onClick={() => setTab('copy')}
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: 'var(--radius)',
-                    background: tab === 'copy' ? 'var(--accent)' : 'transparent',
-                    color: '#fff', fontSize: '13px', fontWeight: 600,
-                    border: '1px solid var(--border)',
-                  }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Экспорт
-                </motion.button>
-                <motion.button
-                  onClick={() => setTab('paste')}
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: 'var(--radius)',
-                    background: tab === 'paste' ? 'var(--accent)' : 'transparent',
-                    color: '#fff', fontSize: '13px', fontWeight: 600,
-                    border: '1px solid var(--border)',
-                  }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Импорт
-                </motion.button>
+              {hasToken && (
+                <div style={{
+                  padding: '12px', borderRadius: 'var(--radius)',
+                  background: 'rgba(0,204,102,0.1)', border: '1px solid rgba(0,204,102,0.2)',
+                  color: 'var(--success)', fontSize: '13px', marginBottom: '16px',
+                }}>
+                  Автосинхронизация включена
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'setup', label: 'Настройка' },
+                  { id: 'copy', label: 'Копировать' },
+                  { id: 'paste', label: 'Вставить' },
+                ].map((t) => (
+                  <motion.button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    style={{
+                      flex: 1, minWidth: '80px', padding: '8px', borderRadius: '8px',
+                      background: tab === t.id ? 'var(--accent)' : 'transparent',
+                      color: '#fff', fontSize: '12px', fontWeight: 600,
+                      border: '1px solid var(--border)',
+                    }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    {t.label}
+                  </motion.button>
+                ))}
               </div>
+
+              {tab === 'setup' && (
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.7, marginBottom: '16px' }}>
+                    Для автосинхронизации нужен GitHub-токен (настройка один раз):
+                  </p>
+                  <ol style={{
+                    color: 'var(--text-secondary)', fontSize: '13px',
+                    lineHeight: 2, paddingLeft: '18px', marginBottom: '16px',
+                  }}>
+                    <li>github.com → Settings → Developer settings</li>
+                    <li>Personal access tokens → Tokens (classic)</li>
+                    <li>Generate new token → галочка <b>repo</b></li>
+                    <li>Скопируйте токен сюда ↓</li>
+                  </ol>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                    <input
+                      type="password"
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      placeholder="ghp_xxxxxxxxxxxx"
+                      style={{
+                        flex: 1, padding: '10px 12px', borderRadius: 'var(--radius)',
+                        border: '1px solid var(--border)', background: 'var(--bg-primary)',
+                        color: 'var(--text-primary)', fontSize: '13px',
+                      }}
+                    />
+                    <motion.button
+                      onClick={handleSaveToken}
+                      style={{
+                        padding: '10px 16px', borderRadius: 'var(--radius)',
+                        background: 'var(--gradient-blue)', color: '#fff',
+                        fontSize: '13px', fontWeight: 600, border: 'none',
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      OK
+                    </motion.button>
+                  </div>
+                  {hasToken && (
+                    <motion.button
+                      onClick={() => { onSetToken(''); setOpen(false); }}
+                      style={{
+                        width: '100%', padding: '8px', borderRadius: '8px',
+                        background: 'rgba(255,68,68,0.1)', color: 'var(--danger)',
+                        fontSize: '12px', fontWeight: 600,
+                        border: '1px solid rgba(255,68,68,0.2)',
+                      }}
+                    >
+                      Отключить автосинхронизацию
+                    </motion.button>
+                  )}
+                </div>
+              )}
 
               {tab === 'copy' && (
                 <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px', lineHeight: 1.6 }}>
-                    Нажмите кнопку, скопируйте код и откройте его на другом устройстве через вкладку «Импорт».
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.7, marginBottom: '12px' }}>
+                    Нажмите кнопку, скопируйте код и вставьте на другом устройстве.
                   </p>
                   <motion.button
-                    onClick={handleCopy}
+                    onClick={handleCopyCode}
                     style={{
-                      width: '100%', padding: '14px', borderRadius: 'var(--radius)',
+                      width: '100%', padding: '12px', borderRadius: 'var(--radius)',
                       background: copied ? 'var(--success)' : 'var(--gradient-blue)',
-                      color: '#fff', fontSize: '15px', fontWeight: 600, border: 'none',
+                      color: '#fff', fontSize: '14px', fontWeight: 600, border: 'none',
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -145,26 +216,26 @@ export default function SyncSetup({ onImport, onReset }) {
 
               {tab === 'paste' && (
                 <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px', lineHeight: 1.6 }}>
-                    Вставьте скопированный код:
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '10px', lineHeight: 1.6 }}>
+                    Вставьте код с другого устройства:
                   </p>
                   <textarea
-                    value={importText}
-                    onChange={(e) => setImportText(e.target.value)}
-                    placeholder="Вставьте код сюда..."
+                    value={importCode}
+                    onChange={(e) => setImportCode(e.target.value)}
+                    placeholder="Вставьте код..."
                     style={{
-                      width: '100%', height: '100px', padding: '12px',
+                      width: '100%', height: '80px', padding: '10px',
                       borderRadius: 'var(--radius)', border: '1px solid var(--border)',
                       background: 'var(--bg-primary)', color: 'var(--text-primary)',
-                      fontSize: '13px', resize: 'none', fontFamily: 'monospace', marginBottom: '12px',
+                      fontSize: '12px', resize: 'none', fontFamily: 'monospace', marginBottom: '10px',
                     }}
                   />
                   <motion.button
-                    onClick={handleImport}
+                    onClick={handleImportCode}
                     style={{
-                      width: '100%', padding: '14px', borderRadius: 'var(--radius)',
+                      width: '100%', padding: '12px', borderRadius: 'var(--radius)',
                       background: 'var(--gradient-blue)', color: '#fff',
-                      fontSize: '15px', fontWeight: 600, border: 'none',
+                      fontSize: '14px', fontWeight: 600, border: 'none',
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -232,7 +303,6 @@ export default function SyncSetup({ onImport, onReset }) {
                     background: 'var(--danger)', color: '#fff',
                     fontSize: '14px', fontWeight: 600, border: 'none',
                   }}
-                  whileHover={{ opacity: 0.9 }}
                 >
                   Удалить
                 </motion.button>
