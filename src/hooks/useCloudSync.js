@@ -16,6 +16,9 @@ function normalize(data) {
 }
 
 export function useCloudSync(storageKey) {
+  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
+  const isAdmin = !!tokenRef.current;
+
   const [data, setData] = useState(() => {
     try {
       const local = localStorage.getItem(`hw-cloud-${storageKey}`);
@@ -24,34 +27,28 @@ export function useCloudSync(storageKey) {
   });
   const [ready, setReady] = useState(false);
   const pollRef = useRef(null);
-  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
   const shaRef = useRef(null);
   const latestRef = useRef(data);
-  const skipPollsRef = useRef(0);
-
-  const isAdmin = !!tokenRef.current;
 
   useEffect(() => { latestRef.current = data; }, [data]);
 
+  // Initial load from cloud for non-admin
   useEffect(() => {
+    if (isAdmin) {
+      setReady(true);
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
-      if (skipPollsRef.current > 0) {
-        skipPollsRef.current--;
-        return;
-      }
-
       try {
-        const url = `${RAW_URL}?_nocache=${Date.now()}`;
-        const res = await fetch(url, { cache: 'no-store' });
+        const res = await fetch(`${RAW_URL}?_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok && !cancelled) {
           const all = await res.json();
           const norm = normalize(all[storageKey]);
-          if (Object.keys(norm).length > 0) {
-            setData(norm);
-            localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(norm));
-          }
+          setData(norm);
+          localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(norm));
         }
       } catch {}
       if (!cancelled) setReady(true);
@@ -59,12 +56,8 @@ export function useCloudSync(storageKey) {
 
     load();
     pollRef.current = setInterval(load, 8000);
-
-    return () => {
-      cancelled = true;
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [storageKey]);
+    return () => { cancelled = true; clearInterval(pollRef.current); };
+  }, [storageKey, isAdmin]);
 
   const saveToGitHub = useCallback(async (allData) => {
     const token = tokenRef.current;
@@ -108,13 +101,12 @@ export function useCloudSync(storageKey) {
   }, []);
 
   const update = useCallback((fn) => {
-    skipPollsRef.current = 3;
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
       latestRef.current = next;
       localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(next));
 
-      if (tokenRef.current) {
+      if (isAdmin) {
         const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
         allData[storageKey] = next;
         localStorage.setItem('hw-sync-all', JSON.stringify(allData));
@@ -123,7 +115,7 @@ export function useCloudSync(storageKey) {
 
       return next;
     });
-  }, [storageKey, saveToGitHub]);
+  }, [storageKey, isAdmin, saveToGitHub]);
 
   const setToken = useCallback((token) => {
     tokenRef.current = token;
@@ -131,11 +123,16 @@ export function useCloudSync(storageKey) {
   }, []);
 
   const resetData = useCallback(() => {
-    skipPollsRef.current = 3;
     setData({});
     latestRef.current = {};
     localStorage.removeItem(`hw-cloud-${storageKey}`);
-  }, [storageKey]);
+    if (isAdmin) {
+      const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
+      allData[storageKey] = {};
+      localStorage.setItem('hw-sync-all', JSON.stringify(allData));
+      saveToGitHub(allData);
+    }
+  }, [storageKey, isAdmin, saveToGitHub]);
 
   return [data, update, ready, setToken, isAdmin, resetData];
 }
