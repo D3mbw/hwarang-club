@@ -16,12 +16,17 @@ function normalize(data) {
 }
 
 export function useCloudSync(storageKey) {
-  const [data, setData] = useState({});
+  const [data, setData] = useState(() => {
+    try {
+      const local = localStorage.getItem(`hw-cloud-${storageKey}`);
+      return local ? normalize(JSON.parse(local)) : {};
+    } catch { return {}; }
+  });
   const [ready, setReady] = useState(false);
   const pollRef = useRef(null);
   const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
   const shaRef = useRef(null);
-  const latestRef = useRef({});
+  const latestRef = useRef(data);
 
   const isAdmin = !!tokenRef.current;
 
@@ -32,45 +37,33 @@ export function useCloudSync(storageKey) {
 
     async function load() {
       try {
-        const res = await fetch(`${RAW_URL}?t=${Date.now()}`);
+        const url = `${RAW_URL}?_nocache=${Date.now()}`;
+        const res = await fetch(url, { cache: 'no-store' });
         if (res.ok && !cancelled) {
           const all = await res.json();
           const norm = normalize(all[storageKey]);
-          setData(norm);
-          localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(norm));
+          if (Object.keys(norm).length > 0) {
+            setData(norm);
+            localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(norm));
+          }
         }
-      } catch {}
-
+      } catch (e) {
+        console.log('Cloud fetch failed, using local data');
+      }
       if (!cancelled) {
         setReady(true);
-        startPolling();
       }
     }
 
     load();
+
+    pollRef.current = setInterval(load, 8000);
 
     return () => {
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [storageKey]);
-
-  function startPolling() {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`${RAW_URL}?t=${Date.now()}`);
-        if (res.ok) {
-          const all = await res.json();
-          const norm = normalize(all[storageKey]);
-          if (JSON.stringify(latestRef.current) !== JSON.stringify(norm)) {
-            setData(norm);
-            localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(norm));
-          }
-        }
-      } catch {}
-    }, 5000);
-  }
 
   const saveToGitHub = useCallback(async (allData) => {
     const token = tokenRef.current;
@@ -91,7 +84,7 @@ export function useCloudSync(storageKey) {
 
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
 
-      const body = { message: `Update data: ${Date.now()}`, content, branch: BRANCH };
+      const body = { message: `Update ${storageKey} ${Date.now()}`, content, branch: BRANCH };
       if (sha) body.sha = sha;
 
       const res = await fetch(API_URL, {
@@ -106,6 +99,8 @@ export function useCloudSync(storageKey) {
       if (res.ok) {
         const json = await res.json();
         shaRef.current = json.content?.sha || null;
+      } else {
+        shaRef.current = null;
       }
     } catch (e) {
       console.error('GitHub save error:', e);
@@ -116,12 +111,14 @@ export function useCloudSync(storageKey) {
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
       latestRef.current = next;
-      localStorage.setItem(`hw-local-${storageKey}`, JSON.stringify(next));
+      localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(next));
 
-      const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
-      allData[storageKey] = next;
-      localStorage.setItem('hw-sync-all', JSON.stringify(allData));
-      saveToGitHub(allData);
+      if (tokenRef.current) {
+        const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
+        allData[storageKey] = next;
+        localStorage.setItem('hw-sync-all', JSON.stringify(allData));
+        saveToGitHub(allData);
+      }
 
       return next;
     });
@@ -135,7 +132,7 @@ export function useCloudSync(storageKey) {
   const resetData = useCallback(() => {
     setData({});
     latestRef.current = {};
-    localStorage.removeItem(`hw-local-${storageKey}`);
+    localStorage.removeItem(`hw-cloud-${storageKey}`);
   }, [storageKey]);
 
   return [data, update, ready, setToken, isAdmin, resetData];
