@@ -6,13 +6,14 @@ import AboutSection from './components/AboutSection';
 import TrainingPlanList from './components/TrainingPlanList';
 import PhotoGallery from './components/PhotoGallery';
 import PlanEditor from './components/PlanEditor';
+import SyncSetup from './components/SyncSetup';
 import Footer from './components/Footer';
 import { useCloudSync } from './hooks/useCloudSync';
 import './styles/global.css';
 
 function App() {
-  const [plansMap, setPlansMap, plansReady] = useCloudSync('hwarang-plans', {});
-  const [photosMap, setPhotosMap, photosReady] = useCloudSync('hwarang-photos', {});
+  const [plansMap, setPlansMap, plansReady, setPlansKey, plansHasKey] = useCloudSync('hwarang-plans');
+  const [photosMap, setPhotosMap, photosReady, setPhotosKey, photosHasKey] = useCloudSync('hwarang-photos');
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -79,6 +80,11 @@ function App() {
     });
   };
 
+  const handleSetKey = (key) => {
+    setPlansKey(key);
+    setPhotosKey(key);
+  };
+
   if (!plansReady || !photosReady) {
     return (
       <div style={{
@@ -108,6 +114,8 @@ function App() {
         onDelete={handleDeletePhoto}
       />
       <Footer />
+
+      <SyncSetup onSetKey={handleSetKey} hasKey={plansHasKey} />
 
       <AnimatePresence>
         {showEditor && (
