@@ -40,6 +40,7 @@ export default function Header({ activeSection, onNavigate }) {
           background: 'rgba(10, 10, 10, 0.92)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid var(--border)',
+          color: 'var(--text-primary)',
         }}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -84,7 +85,7 @@ export default function Header({ activeSection, onNavigate }) {
                     position: 'relative',
                     transition: 'color 0.3s',
                   }}
-                  whileHover={{ color: '#ffffff' }}
+                  whileHover={{ color: 'var(--text-primary)' }}
                   onClick={() => handleNav(s.id)}
                 >
                   {s.label}

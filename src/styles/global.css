@@ -68,6 +68,52 @@
   background: #0066ff;
 }
 
+[data-theme="light"] header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #d0d4e0 !important;
+}
+
+[data-theme="light"] header nav li {
+  color: #333 !important;
+}
+
+[data-theme="light"] footer {
+  background: #e8eaf0 !important;
+  border-top-color: #d0d4e0 !important;
+}
+
+[data-theme="light"] footer h4 {
+  color: #111122 !important;
+}
+
+[data-theme="light"] footer p {
+  color: #444460 !important;
+}
+
+[data-theme="light"] footer a {
+  color: #444460 !important;
+}
+
+[data-theme="light"] footer a:hover {
+  color: #0044cc !important;
+}
+
+[data-theme="light"] footer > div:last-child {
+  border-color: #d0d4e0 !important;
+}
+
+[data-theme="light"] [style*="rgba(0, 0, 0, 0.7)"],
+[data-theme="light"] [style*="rgba(0, 0, 0, 0.8)"],
+[data-theme="light"] [style*="rgba(0, 0, 0, 0.95)"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-theme="light"] .hero-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #c8d8ff 50%, #0066ff 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
 * {
   margin: 0;
   padding: 0;
