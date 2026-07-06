@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PhotoUploader from './PhotoUploader';
 
-export default function PhotoGallery({ photos, onUpload, onDelete }) {
+export default function PhotoGallery({ photos, isAdmin, onUpload, onDelete }) {
+  const uploadHandler = isAdmin ? onUpload : null;
+  const deleteHandler = isAdmin ? onDelete : null;
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -56,7 +58,7 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
         </p>
       </motion.div>
 
-      {onUpload && <PhotoUploader onUpload={onUpload} />}
+      {uploadHandler && <PhotoUploader onUpload={uploadHandler} />}
 
       {photos.length > 0 && (
         <div style={{
@@ -111,7 +113,7 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
                   {photo.name}
                 </span>
               </div>
-              {onDelete && (
+              {deleteHandler && (
               <motion.button
                 style={{
                   position: 'absolute',
@@ -132,9 +134,9 @@ export default function PhotoGallery({ photos, onUpload, onDelete }) {
                 }}
                 whileHover={{ background: 'rgba(255, 68, 68, 1)' }}
                 whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
+                  onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(photo.id);
+                  deleteHandler(photo.id);
                 }}
               >
                 ×

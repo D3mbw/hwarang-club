@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TrainingPlanCard from './TrainingPlanCard';
 
-export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
+export default function TrainingPlanList({ plans, isAdmin, onEdit, onDelete, onAdd }) {
+  const editHandler = isAdmin ? onEdit : null;
+  const deleteHandler = isAdmin ? onDelete : null;
+  const addHandler = isAdmin ? onAdd : null;
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
             Создайте первый план тренировки
           </p>
-          {onAdd && (
+          {addHandler && (
           <motion.button
             style={{
               display: 'inline-flex',
@@ -84,7 +87,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
             }}
             whileHover={{ scale: 1.05, boxShadow: '0 8px 40px rgba(0, 102, 255, 0.6)' }}
             whileTap={{ scale: 0.98 }}
-            onClick={onAdd}
+            onClick={addHandler}
           >
             + Создать план
           </motion.button>
@@ -101,14 +104,14 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
               <TrainingPlanCard
                 key={plan.id}
                 plan={plan}
-                onEdit={onEdit}
-                onDelete={onDelete}
+                onEdit={editHandler}
+                onDelete={deleteHandler}
                 index={index}
                 isMobile={isMobile}
               />
             ))}
           </div>
-          {onAdd && (
+          {addHandler && (
           <motion.div
             style={{ textAlign: 'center', marginTop: '32px' }}
             initial={{ opacity: 0 }}
@@ -130,7 +133,7 @@ export default function TrainingPlanList({ plans, onEdit, onDelete, onAdd }) {
               }}
               whileHover={{ scale: 1.05, boxShadow: '0 8px 40px rgba(0, 102, 255, 0.6)' }}
               whileTap={{ scale: 0.98 }}
-              onClick={onAdd}
+              onClick={addHandler}
             >
               + Новый план
             </motion.button>

@@ -12,16 +12,16 @@ import { useCloudSync } from './hooks/useCloudSync';
 import './styles/global.css';
 
 function App() {
-  const [plansMap, setPlansMap, plansReady, resetPlans] = useCloudSync('hwarang-plans');
-  const [photosMap, setPhotosMap, photosReady, resetPhotos] = useCloudSync('hwarang-photos');
+  const plans = useCloudSync('hwarang-plans');
+  const photos = useCloudSync('hwarang-photos');
   const [activeSection, setActiveSection] = useState('hero');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
-  const plans = Object.values(plansMap || {}).sort((a, b) =>
+  const sortedPlans = Object.values(plans.data || {}).sort((a, b) =>
     new Date(b.createdAt) - new Date(a.createdAt)
   );
-  const photos = Object.values(photosMap || {}).sort((a, b) =>
+  const sortedPhotos = Object.values(photos.data || {}).sort((a, b) =>
     new Date(b.uploadedAt) - new Date(a.uploadedAt)
   );
 
@@ -55,13 +55,13 @@ function App() {
   };
 
   const handleSavePlan = (plan) => {
-    setPlansMap((prev) => ({ ...prev, [plan.id]: plan }));
+    plans.update((prev) => ({ ...prev, [plan.id]: plan }));
     setShowEditor(false);
     setEditingPlan(null);
   };
 
   const handleDeletePlan = (id) => {
-    setPlansMap((prev) => {
+    plans.update((prev) => {
       const copy = { ...prev };
       delete copy[id];
       return copy;
@@ -69,11 +69,11 @@ function App() {
   };
 
   const handleAddPhoto = (photo) => {
-    setPhotosMap((prev) => ({ ...prev, [photo.id]: photo }));
+    photos.update((prev) => ({ ...prev, [photo.id]: photo }));
   };
 
   const handleDeletePhoto = (id) => {
-    setPhotosMap((prev) => {
+    photos.update((prev) => {
       const copy = { ...prev };
       delete copy[id];
       return copy;
@@ -81,11 +81,11 @@ function App() {
   };
 
   const handleReset = () => {
-    resetPlans();
-    resetPhotos();
+    plans.resetData();
+    photos.resetData();
   };
 
-  if (!plansReady || !photosReady) {
+  if (!plans.ready || !photos.ready) {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -103,18 +103,25 @@ function App() {
       <HeroSection onNavigate={handleNavigate} />
       <AboutSection />
       <TrainingPlanList
-        plans={plans}
+        plans={sortedPlans}
+        isAdmin={plans.isAdmin}
         onEdit={(plan) => { setEditingPlan(plan); setShowEditor(true); }}
         onDelete={handleDeletePlan}
         onAdd={() => { setEditingPlan(null); setShowEditor(true); }}
       />
       <PhotoGallery
-        photos={photos}
+        photos={sortedPhotos}
+        isAdmin={photos.isAdmin}
         onUpload={handleAddPhoto}
         onDelete={handleDeletePhoto}
       />
       <Footer />
-      <SyncSetup onReset={handleReset} />
+      <SyncSetup
+        isAdmin={plans.isAdmin}
+        onLogin={plans.login}
+        onLogout={plans.logout}
+        onReset={handleReset}
+      />
 
       <AnimatePresence>
         {showEditor && (

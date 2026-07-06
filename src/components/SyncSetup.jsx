@@ -1,9 +1,26 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function SyncSetup({ onReset }) {
+export default function SyncSetup({ isAdmin, onLogin, onLogout, onReset }) {
   const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState('');
+  const [error, setError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleLogin = () => {
+    if (onLogin(pw)) {
+      setOpen(false);
+      setPw('');
+      setError(false);
+    } else {
+      setError(true);
+    }
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    setOpen(false);
+  };
 
   return (
     <>
@@ -12,14 +29,15 @@ export default function SyncSetup({ onReset }) {
         style={{
           position: 'fixed', bottom: '20px', right: '20px',
           width: '50px', height: '50px', borderRadius: '50%',
-          background: 'var(--gradient-blue)', color: '#fff', fontSize: '18px',
+          background: isAdmin ? 'var(--success)' : 'var(--gradient-blue)',
+          color: '#fff', fontSize: '18px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 20px rgba(0, 102, 255, 0.4)', zIndex: 100, border: 'none',
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
-        ⚙
+        {isAdmin ? '🛡' : '⚙'}
       </motion.button>
 
       <AnimatePresence>
@@ -46,33 +64,92 @@ export default function SyncSetup({ onReset }) {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 style={{
-                fontSize: '20px', fontWeight: 700, marginBottom: '16px',
+                fontSize: '20px', fontWeight: 700, marginBottom: '20px',
                 background: 'var(--gradient-blue)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
-                Настройки
+                {isAdmin ? 'Админ-панель' : 'Вход'}
               </h3>
 
-              <p style={{
-                color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.7,
-                marginBottom: '20px',
-              }}>
-                Данные автоматически синхронизируются между всеми
-                устройствами через облако. Настройка не требуется.
-              </p>
+              {isAdmin ? (
+                <>
+                  <div style={{
+                    padding: '12px', borderRadius: 'var(--radius)',
+                    background: 'rgba(0,204,102,0.1)', border: '1px solid rgba(0,204,102,0.2)',
+                    color: 'var(--success)', fontSize: '13px', marginBottom: '20px',
+                  }}>
+                    Вы вошли как администратор.<br/>Добавляйте и удаляйте планы.
+                  </div>
 
-              <motion.button
-                onClick={() => setConfirmReset(true)}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 'var(--radius)',
-                  background: 'rgba(255,68,68,0.1)', color: 'var(--danger)',
-                  fontSize: '14px', fontWeight: 600,
-                  border: '1px solid rgba(255,68,68,0.2)',
-                }}
-                whileHover={{ background: 'rgba(255,68,68,0.2)' }}
-              >
-                Сбросить все данные
-              </motion.button>
+                  <motion.button
+                    onClick={handleLogout}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: 'var(--radius)',
+                      background: 'rgba(255,165,0,0.1)', color: '#ffa500',
+                      fontSize: '14px', fontWeight: 600,
+                      border: '1px solid rgba(255,165,0,0.2)', marginBottom: '10px',
+                    }}
+                    whileHover={{ background: 'rgba(255,165,0,0.2)' }}
+                  >
+                    Выйти из админки
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => setConfirmReset(true)}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: 'var(--radius)',
+                      background: 'rgba(255,68,68,0.1)', color: 'var(--danger)',
+                      fontSize: '14px', fontWeight: 600,
+                      border: '1px solid rgba(255,68,68,0.2)',
+                    }}
+                    whileHover={{ background: 'rgba(255,68,68,0.2)' }}
+                  >
+                    Сбросить все данные
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <p style={{
+                    color: 'var(--text-secondary)', fontSize: '14px',
+                    marginBottom: '16px', lineHeight: 1.6,
+                  }}>
+                    Введите пароль администратора для управления планами:
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <input
+                      type="password"
+                      value={pw}
+                      onChange={(e) => { setPw(e.target.value); setError(false); }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                      placeholder="Пароль"
+                      style={{
+                        flex: 1, padding: '12px 14px', borderRadius: 'var(--radius)',
+                        border: `1px solid ${error ? 'var(--danger)' : 'var(--border)'}`,
+                        background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                        fontSize: '15px',
+                      }}
+                    />
+                    <motion.button
+                      onClick={handleLogin}
+                      style={{
+                        padding: '12px 20px', borderRadius: 'var(--radius)',
+                        background: 'var(--gradient-blue)', color: '#fff',
+                        fontSize: '15px', fontWeight: 600, border: 'none',
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Войти
+                    </motion.button>
+                  </div>
+
+                  {error && (
+                    <p style={{ color: 'var(--danger)', fontSize: '13px' }}>
+                      Неверный пароль
+                    </p>
+                  )}
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

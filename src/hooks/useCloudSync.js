@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 const GIST_ID = '95f894b48d09b764c7b91cb8d7e922c0';
 const RAW_URL = `https://gist.githubusercontent.com/D3mbw/${GIST_ID}/raw/data.json`;
 const GIST_API = `https://api.github.com/gists/${GIST_ID}`;
+const ADMIN_PASSWORD = 'hwarang2009';
 
 function normalize(data) {
   if (!data) return {};
@@ -22,15 +23,17 @@ export function useCloudSync(storageKey) {
     } catch { return {}; }
   });
   const [ready, setReady] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('hw-admin') === '1');
   const pollRef = useRef(null);
   const latestRef = useRef(data);
+  const skipRef = useRef(0);
 
   useEffect(() => { latestRef.current = data; }, [data]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (skipRef.current > 0) { skipRef.current--; return; }
       try {
         const res = await fetch(`${RAW_URL}?_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok && !cancelled) {
@@ -48,11 +51,9 @@ export function useCloudSync(storageKey) {
   }, [storageKey]);
 
   const saveToGist = useCallback(async (allData) => {
-    setSyncing(true);
     try {
-      const token = localStorage.getItem('hw-token') || import.meta.env.VITE_GH_TOKEN || '';
-      if (!token) { setSyncing(false); return; }
-
+      const token = import.meta.env.VITE_GH_TOKEN || '';
+      if (!token) { console.error('No GitHub token available'); return false; }
       const res = await fetch(GIST_API, {
         method: 'PATCH',
         headers: {
@@ -66,14 +67,17 @@ export function useCloudSync(storageKey) {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         console.error('Gist save error:', err.message || res.status);
+        return false;
       }
+      return true;
     } catch (e) {
       console.error('Gist save error:', e);
+      return false;
     }
-    setSyncing(false);
   }, []);
 
   const update = useCallback((fn) => {
+    skipRef.current = 3;
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
       latestRef.current = next;
@@ -88,7 +92,22 @@ export function useCloudSync(storageKey) {
     });
   }, [storageKey, saveToGist]);
 
+  const login = useCallback((password) => {
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem('hw-admin', '1');
+      setIsAdmin(true);
+      return true;
+    }
+    return false;
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('hw-admin');
+    setIsAdmin(false);
+  }, []);
+
   const resetData = useCallback(() => {
+    skipRef.current = 3;
     setData({});
     latestRef.current = {};
     localStorage.removeItem(`hw-cloud-${storageKey}`);
@@ -98,5 +117,5 @@ export function useCloudSync(storageKey) {
     saveToGist(allData);
   }, [storageKey, saveToGist]);
 
-  return [data, update, ready, resetData, syncing];
+  return { data, update, ready, isAdmin, login, logout, resetData };
 }
