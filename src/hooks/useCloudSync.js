@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const GIST_ID = '59d0dcc2fecc49535046c718f502cad9';
+const GIST_ID = '95f894b48d09b764c7b91cb8d7e922c0';
 const RAW_URL = `https://gist.githubusercontent.com/D3mbw/${GIST_ID}/raw/data.json`;
 const GIST_API = `https://api.github.com/gists/${GIST_ID}`;
 
@@ -22,22 +22,13 @@ export function useCloudSync(storageKey) {
     } catch { return {}; }
   });
   const [ready, setReady] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(() => !!localStorage.getItem('hw-gh-token'));
+  const [syncing, setSyncing] = useState(false);
   const pollRef = useRef(null);
   const latestRef = useRef(data);
-  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
 
   useEffect(() => { latestRef.current = data; }, [data]);
 
   useEffect(() => {
-    tokenRef.current = localStorage.getItem('hw-gh-token') || '';
-    setIsAdmin(!!tokenRef.current);
-  });
-
-  // Only non-admin polls the gist
-  useEffect(() => {
-    if (isAdmin) { setReady(true); return; }
-
     let cancelled = false;
     async function load() {
       try {
@@ -52,15 +43,16 @@ export function useCloudSync(storageKey) {
       if (!cancelled) setReady(true);
     }
     load();
-    pollRef.current = setInterval(load, 8000);
+    pollRef.current = setInterval(load, 5000);
     return () => { cancelled = true; clearInterval(pollRef.current); };
-  }, [storageKey, isAdmin]);
+  }, [storageKey]);
 
   const saveToGist = useCallback(async (allData) => {
-    const token = tokenRef.current;
-    if (!token) { console.log('No token, skip save'); return; }
-
+    setSyncing(true);
     try {
+      const token = localStorage.getItem('hw-token') || import.meta.env.VITE_GH_TOKEN || '';
+      if (!token) { setSyncing(false); return; }
+
       const res = await fetch(GIST_API, {
         method: 'PATCH',
         headers: {
@@ -71,15 +63,14 @@ export function useCloudSync(storageKey) {
           files: { 'data.json': { content: JSON.stringify(allData, null, 2) } }
         }),
       });
-
-      const json = await res.json();
       if (!res.ok) {
-        console.error('Gist save failed:', json.message);
-        alert('Ошибка сохранения: ' + (json.message || res.status));
+        const err = await res.json().catch(() => ({}));
+        console.error('Gist save error:', err.message || res.status);
       }
     } catch (e) {
       console.error('Gist save error:', e);
     }
+    setSyncing(false);
   }, []);
 
   const update = useCallback((fn) => {
@@ -88,36 +79,24 @@ export function useCloudSync(storageKey) {
       latestRef.current = next;
       localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(next));
 
-      const token = tokenRef.current;
-      if (token) {
-        const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
-        allData[storageKey] = next;
-        localStorage.setItem('hw-sync-all', JSON.stringify(allData));
-        saveToGist(allData);
-      }
+      const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
+      allData[storageKey] = next;
+      localStorage.setItem('hw-sync-all', JSON.stringify(allData));
+      saveToGist(allData);
 
       return next;
     });
   }, [storageKey, saveToGist]);
 
-  const setToken = useCallback((token) => {
-    tokenRef.current = token;
-    localStorage.setItem('hw-gh-token', token);
-    setIsAdmin(!!token);
-  }, []);
-
   const resetData = useCallback(() => {
     setData({});
     latestRef.current = {};
     localStorage.removeItem(`hw-cloud-${storageKey}`);
-    const token = tokenRef.current;
-    if (token) {
-      const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
-      allData[storageKey] = {};
-      localStorage.setItem('hw-sync-all', JSON.stringify(allData));
-      saveToGist(allData);
-    }
+    const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
+    allData[storageKey] = {};
+    localStorage.setItem('hw-sync-all', JSON.stringify(allData));
+    saveToGist(allData);
   }, [storageKey, saveToGist]);
 
-  return [data, update, ready, setToken, isAdmin, resetData];
+  return [data, update, ready, resetData, syncing];
 }
