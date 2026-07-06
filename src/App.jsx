@@ -18,6 +18,11 @@ function App() {
   const [editingPlan, setEditingPlan] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
+  useEffect(() => {
+    const theme = localStorage.getItem('hw-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
+
   const sortedPlans = Object.values(plans.data || {}).sort((a, b) =>
     new Date(b.createdAt) - new Date(a.createdAt)
   );
