@@ -15,9 +15,6 @@ function normalize(data) {
 }
 
 export function useCloudSync(storageKey) {
-  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
-  const isAdmin = !!tokenRef.current;
-
   const [data, setData] = useState(() => {
     try {
       const local = localStorage.getItem(`hw-cloud-${storageKey}`);
@@ -25,11 +22,19 @@ export function useCloudSync(storageKey) {
     } catch { return {}; }
   });
   const [ready, setReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => !!localStorage.getItem('hw-gh-token'));
   const pollRef = useRef(null);
   const latestRef = useRef(data);
+  const tokenRef = useRef(localStorage.getItem('hw-gh-token') || '');
 
   useEffect(() => { latestRef.current = data; }, [data]);
 
+  useEffect(() => {
+    tokenRef.current = localStorage.getItem('hw-gh-token') || '';
+    setIsAdmin(!!tokenRef.current);
+  });
+
+  // Only non-admin polls the gist
   useEffect(() => {
     if (isAdmin) { setReady(true); return; }
 
@@ -46,7 +51,6 @@ export function useCloudSync(storageKey) {
       } catch {}
       if (!cancelled) setReady(true);
     }
-
     load();
     pollRef.current = setInterval(load, 8000);
     return () => { cancelled = true; clearInterval(pollRef.current); };
@@ -54,7 +58,7 @@ export function useCloudSync(storageKey) {
 
   const saveToGist = useCallback(async (allData) => {
     const token = tokenRef.current;
-    if (!token) return;
+    if (!token) { console.log('No token, skip save'); return; }
 
     try {
       const res = await fetch(GIST_API, {
@@ -64,15 +68,14 @@ export function useCloudSync(storageKey) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          files: {
-            'data.json': {
-              content: JSON.stringify(allData, null, 2)
-            }
-          }
+          files: { 'data.json': { content: JSON.stringify(allData, null, 2) } }
         }),
       });
+
+      const json = await res.json();
       if (!res.ok) {
-        console.error('Gist save failed:', res.status, await res.text());
+        console.error('Gist save failed:', json.message);
+        alert('Ошибка сохранения: ' + (json.message || res.status));
       }
     } catch (e) {
       console.error('Gist save error:', e);
@@ -85,7 +88,8 @@ export function useCloudSync(storageKey) {
       latestRef.current = next;
       localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(next));
 
-      if (isAdmin) {
+      const token = tokenRef.current;
+      if (token) {
         const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
         allData[storageKey] = next;
         localStorage.setItem('hw-sync-all', JSON.stringify(allData));
@@ -94,24 +98,26 @@ export function useCloudSync(storageKey) {
 
       return next;
     });
-  }, [storageKey, isAdmin, saveToGist]);
+  }, [storageKey, saveToGist]);
 
   const setToken = useCallback((token) => {
     tokenRef.current = token;
     localStorage.setItem('hw-gh-token', token);
+    setIsAdmin(!!token);
   }, []);
 
   const resetData = useCallback(() => {
     setData({});
     latestRef.current = {};
     localStorage.removeItem(`hw-cloud-${storageKey}`);
-    if (isAdmin) {
+    const token = tokenRef.current;
+    if (token) {
       const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
       allData[storageKey] = {};
       localStorage.setItem('hw-sync-all', JSON.stringify(allData));
       saveToGist(allData);
     }
-  }, [storageKey, isAdmin, saveToGist]);
+  }, [storageKey, saveToGist]);
 
   return [data, update, ready, setToken, isAdmin, resetData];
 }
