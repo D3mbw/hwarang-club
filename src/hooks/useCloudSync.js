@@ -15,6 +15,8 @@ function normalize(data) {
   return typeof data === 'object' ? data : {};
 }
 
+function dataHash(d) { return JSON.stringify(d); }
+
 export function useCloudSync(storageKey) {
   const [data, setData] = useState(() => {
     try {
@@ -26,61 +28,73 @@ export function useCloudSync(storageKey) {
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('hw-admin') === '1');
   const pollRef = useRef(null);
   const latestRef = useRef(data);
-  const skipRef = useRef(0);
+  const localHashRef = useRef(dataHash(data));
+  const lastWriteRef = useRef(0);
+  const saveTimerRef = useRef(null);
 
-  useEffect(() => { latestRef.current = data; }, [data]);
+  useEffect(() => { latestRef.current = data; localHashRef.current = dataHash(data); }, [data]);
 
+  // Poll from cloud
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
-      if (skipRef.current > 0) { skipRef.current--; return; }
+      // Skip poll if we just wrote locally (within 30 seconds)
+      if (Date.now() - lastWriteRef.current < 30000) return;
+
       try {
         const res = await fetch(`${RAW_URL}?_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok && !cancelled) {
           const all = await res.json();
-          const norm = normalize(all[storageKey]);
-          setData(norm);
-          localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(norm));
+          const cloudData = normalize(all[storageKey]);
+          const cloudHash = dataHash(cloudData);
+
+          // Only update if cloud data is actually different from what we have
+          if (cloudHash !== localHashRef.current) {
+            setData(cloudData);
+            localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(cloudData));
+          }
         }
       } catch {}
+
       if (!cancelled) setReady(true);
     }
+
     load();
     pollRef.current = setInterval(load, 5000);
     return () => { cancelled = true; clearInterval(pollRef.current); };
   }, [storageKey]);
 
-  const saveToGist = useCallback(async (allData) => {
-    try {
-      const token = import.meta.env.VITE_GH_TOKEN || '';
-      if (!token) { console.error('No GitHub token available'); return false; }
-      const res = await fetch(GIST_API, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          files: { 'data.json': { content: JSON.stringify(allData, null, 2) } }
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error('Gist save error:', err.message || res.status);
-        return false;
+  const saveToGist = useCallback((allData) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const token = import.meta.env.VITE_GH_TOKEN || '';
+        if (!token) return;
+
+        await fetch(GIST_API, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            files: { 'data.json': { content: JSON.stringify(allData, null, 2) } }
+          }),
+        });
+      } catch (e) {
+        console.error('Gist save error:', e);
       }
-      return true;
-    } catch (e) {
-      console.error('Gist save error:', e);
-      return false;
-    }
+    }, 1500);
   }, []);
 
   const update = useCallback((fn) => {
-    skipRef.current = 3;
+    lastWriteRef.current = Date.now();
     setData((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
       latestRef.current = next;
+      const hash = dataHash(next);
+      localHashRef.current = hash;
       localStorage.setItem(`hw-cloud-${storageKey}`, JSON.stringify(next));
 
       const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
@@ -107,9 +121,10 @@ export function useCloudSync(storageKey) {
   }, []);
 
   const resetData = useCallback(() => {
-    skipRef.current = 3;
+    lastWriteRef.current = Date.now();
     setData({});
     latestRef.current = {};
+    localHashRef.current = dataHash({});
     localStorage.removeItem(`hw-cloud-${storageKey}`);
     const allData = JSON.parse(localStorage.getItem('hw-sync-all') || '{}');
     allData[storageKey] = {};
