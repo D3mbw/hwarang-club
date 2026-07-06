@@ -19,21 +19,53 @@
 }
 
 [data-theme="light"] {
-  --bg-primary: #f5f6fa;
+  --bg-primary: #f0f2f8;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --accent: #0066ff;
-  --accent-dark: #0044cc;
-  --accent-light: #0055dd;
-  --text-primary: #1a1a2e;
-  --text-secondary: #555570;
-  --border: #e0e0ea;
-  --danger: #dd2222;
-  --success: #00aa55;
+  --accent: #0055dd;
+  --accent-dark: #003daa;
+  --accent-light: #0044cc;
+  --text-primary: #111122;
+  --text-secondary: #444460;
+  --border: #d0d4e0;
+  --danger: #cc2222;
+  --success: #00994d;
   --gradient-blue: linear-gradient(135deg, #0066ff 0%, #0044cc 50%, #002266 100%);
-  --gradient-dark: linear-gradient(135deg, #e8eaf0 0%, #f5f6fa 100%);
-  --shadow: 0 4px 20px rgba(0, 102, 255, 0.1);
-  --shadow-hover: 0 8px 40px rgba(0, 102, 255, 0.2);
+  --gradient-dark: linear-gradient(135deg, #e8eaf0 0%, #f0f2f8 100%);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] header {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: #d0d4e0;
+}
+
+[data-theme="light"] a {
+  color: #0044cc;
+}
+
+[data-theme="light"] a:hover {
+  color: #003399;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea {
+  background: #f0f2f8;
+  border-color: #d0d4e0;
+  color: #111122;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #f0f2f8;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c0c4d0;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #0066ff;
 }
 
 * {
