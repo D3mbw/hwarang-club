@@ -57,7 +57,7 @@ export default function TrainingPlanCard({ plan, onEdit, onDelete, index, isMobi
         fontSize: isMobile ? '18px' : '20px',
         fontWeight: 700,
         marginBottom: '10px',
-        color: '#fff',
+        color: 'var(--text-primary)',
       }}>
         {plan.title}
       </h3>

@@ -277,7 +277,7 @@ export default function PlanEditor({ plan, onSave, onClose }) {
                   fontSize: '15px',
                   fontWeight: 600,
                 }}
-                whileHover={{ borderColor: 'var(--text-secondary)', color: '#fff' }}
+                whileHover={{ borderColor: 'var(--text-secondary)', color: 'var(--text-primary)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onClose}
               >

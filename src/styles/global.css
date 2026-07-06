@@ -68,6 +68,98 @@
   background: #0066ff;
 }
 
+/* Header */
+[data-theme="light"] header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #d0d4e0 !important;
+}
+[data-theme="light"] header nav li {
+  color: #333 !important;
+}
+
+/* Hero section */
+[data-theme="light"] #hero h1 {
+  background: linear-gradient(135deg, #001a4d 0%, #0044cc 50%, #0066ff 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Cards */
+[data-theme="light"] [style*="var(--bg-card)"],
+[data-theme="light"] [style*="bg-card"] {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Training plan cards — override hardcoded #fff on titles */
+[data-theme="light"] h3[style*="color: #fff"],
+[data-theme="light"] h3[style*="color:#fff"] {
+  color: #111122 !important;
+}
+
+/* Plan card date badge */
+[data-theme="light"] [style*="rgba(0, 102, 255, 0.1)"][style*="borderRadius: 20px"] {
+  background: rgba(0, 85, 221, 0.1) !important;
+  color: #0044cc !important;
+}
+
+/* Buttons — keep gradient blue buttons white text, fix outline buttons */
+[data-theme="light"] [style*="rgba(0, 102, 255, 0.1)"][style*="border: 1px solid rgba(0, 102, 255, 0.2)"] {
+  color: #0044cc !important;
+}
+
+[data-theme="light"] [style*="rgba(255, 68, 68, 0.1)"][style*="border: 1px solid rgba(255, 68, 68, 0.2)"] {
+  color: #cc2222 !important;
+}
+
+/* Photo overlay */
+[data-theme="light"] [style*="linear-gradient(transparent 50%"] {
+  background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.5)) !important;
+}
+
+/* Lightbox */
+[data-theme="light"] [style*="rgba(0, 0, 0, 0.95)"] {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Modals / overlays */
+[data-theme="light"] [style*="rgba(0, 0, 0, 0.7)"] {
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Photo name text */
+[data-theme="light"] [style*="linear-gradient(transparent"] span {
+  color: #fff !important;
+}
+
+/* Footer */
+[data-theme="light"] footer {
+  background: #e8eaf0 !important;
+  border-top-color: #d0d4e0 !important;
+}
+[data-theme="light"] footer h4 {
+  color: #111122 !important;
+}
+[data-theme="light"] footer p {
+  color: #444460 !important;
+}
+[data-theme="light"] footer a {
+  color: #444460 !important;
+}
+[data-theme="light"] footer a:hover {
+  color: #0044cc !important;
+}
+[data-theme="light"] footer > div:last-child {
+  border-color: #d0d4e0 !important;
+}
+
+/* Scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #f0f2f8;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c0c4d0;
+}
+
 [data-theme="light"] header {
   background: rgba(255, 255, 255, 0.95) !important;
   border-bottom-color: #d0d4e0 !important;
