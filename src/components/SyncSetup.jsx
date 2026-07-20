@@ -6,14 +6,6 @@ export default function SyncSetup({ isAdmin, onLogin, onLogout, onReset }) {
   const [pw, setPw] = useState('');
   const [error, setError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('hw-theme') || 'dark');
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('hw-theme', next);
-    document.documentElement.setAttribute('data-theme', next);
-  };
 
   const handleLogin = () => {
     if (onLogin(pw)) {
@@ -32,23 +24,6 @@ export default function SyncSetup({ isAdmin, onLogin, onLogout, onReset }) {
 
   return (
     <>
-      <motion.button
-        onClick={toggleTheme}
-        style={{
-          position: 'fixed', bottom: '20px', right: '80px',
-          width: '50px', height: '50px', borderRadius: '50%',
-          background: 'var(--bg-secondary)',
-          color: 'var(--text-primary)', fontSize: '20px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: 'var(--shadow)', zIndex: 100, border: '1px solid var(--border)',
-        }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-      >
-        {theme === 'dark' ? '☀' : '☾'}
-      </motion.button>
-
       <motion.button
         onClick={() => setOpen(true)}
         style={{
