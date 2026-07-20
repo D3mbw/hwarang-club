@@ -150,7 +150,7 @@ export default function AboutSection() {
           pointerEvents: 'none',
         }} />
         <img
-          src="/hwarang-club/logo.jpg"
+          src="/logo.jpg"
           alt="Хваран логотип"
           style={{
             width: '80%',

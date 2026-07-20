@@ -38,7 +38,7 @@ export default function Footer() {
             marginBottom: '16px',
           }}>
             <img
-              src="/hwarang-club/logo.jpg"
+              src="/logo.jpg"
               alt="Хваран"
               style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }}
             />

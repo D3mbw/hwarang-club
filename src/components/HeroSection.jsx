@@ -86,7 +86,7 @@ export default function HeroSection({ onNavigate }) {
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
         <motion.img
-          src="/hwarang-club/logo.jpg"
+          src="/logo.jpg"
           alt="Хваран клуб"
           style={{
             width: isMobile ? '160px' : '240px',

@@ -59,7 +59,7 @@ export default function Header({ activeSection, onNavigate }) {
           WebkitTextFillColor: 'transparent',
         }}>
           <img
-            src="/hwarang-club/logo.jpg"
+            src="/logo.jpg"
             alt="Хваран"
             style={{
               width: isMobile ? '36px' : '44px',
